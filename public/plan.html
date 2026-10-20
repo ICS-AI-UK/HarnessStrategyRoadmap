@@ -332,6 +332,12 @@ table.t tr:last-child td { border-bottom: 0; }
 .grow.act-row:hover .glabel, .grow.sel .glabel { background: var(--accent-soft); }
 .gtrack { position: relative; flex: none; background-image: repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px var(--wk)); }
 .grow.h .gtrack { background-image: none; }
+.gbody.days .grow:not(.h) .gtrack { background-image: repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px var(--wk)), repeating-linear-gradient(to right, transparent 0 calc(var(--dy) * 5), var(--band) calc(var(--dy) * 5) calc(var(--dy) * 7)); }
+/* Month and horizon names stay in view while their segment is partly scrolled behind the description column. */
+.gseg.mseg, .grow.h:first-child .gseg { overflow: visible; clip-path: inset(0); }
+.gseg.mseg span, .grow.h:first-child .gseg span { position: sticky; left: calc(var(--lw) + 27px); }   /* the label column is --lw plus 21px of padding and border */
+.gseg.dseg { padding: 6px 0 0; text-align: center; font-size: 11px; }
+.gseg.wkend { background: var(--band); }
 .gseg { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--line); padding: 6px 6px 0; font-size: 11.5px; white-space: nowrap; overflow: hidden; color: var(--muted); }
 .gseg.cur { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
 .gbar { --soft: color-mix(in srgb, var(--ic) 22%, var(--surface)); position: absolute; top: 9px; height: 18px; border-radius: 3px; border: 1.5px solid var(--ic); background: linear-gradient(to right, var(--ic) var(--p), var(--soft) var(--p)); cursor: pointer; padding: 0; z-index: 3; }
@@ -525,7 +531,7 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 0 40px; }
 <header class="mast">
   <div class="wrap">
     <div class="top"><span class="eyebrow">ICS.ai · Strategy and plan · Draft for internal review</span><span class="sync" id="sync"><i></i><span>Loading plan…</span></span></div>
-    <div class="verline" id="verline"><button type="button" class="verbtn" id="verBtn" aria-expanded="false" aria-controls="history"><b>Version 0.11</b><span>Last updated 20 Oct 2026 by Lee Englestone</span></button><a class="verbtn" id="exportBtn" href="/api/export" download hidden title="One self-contained HTML file of the whole plan, with no editing. Opens on its own.">Download read-only copy</a><span class="lastedit" id="lastEdit"></span><form method="post" action="/logout" id="signOutForm" hidden style="margin-left:auto"><button type="submit" class="verbtn" title="Sign out of the plan on this browser">Sign out<span id="signedInAs"></span></button></form></div>
+    <div class="verline" id="verline"><button type="button" class="verbtn" id="verBtn" aria-expanded="false" aria-controls="history"><b>Version 0.12</b><span>Last updated 20 Oct 2026 by Lee Englestone</span></button><a class="verbtn" id="exportBtn" href="/api/export" download hidden title="One self-contained HTML file of the whole plan, with no editing. Opens on its own.">Download read-only copy</a><span class="lastedit" id="lastEdit"></span><form method="post" action="/logout" id="signOutForm" hidden style="margin-left:auto"><button type="submit" class="verbtn" title="Sign out of the plan on this browser">Sign out<span id="signedInAs"></span></button></form></div>
     <h1>The Harness Gen 3 ASE <span>Strategy and plan: from aspiration to implementation, from prototype to production</span></h1>
     <p class="lede">The Harness is the platform we deploy into a council's own cloud to host, connect and grow the apps and synthetic workers that run their services. This plan sets out six initiatives, who owns each piece of work, and a working demonstration every fortnight from this week onwards.</p>
     <div class="thesis">
@@ -623,6 +629,7 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 0 40px; }
         <button type="button" class="chip" id="gtodayBtn" title="Scroll to today">Today</button>
         <button type="button" class="chip" id="gnext" title="Scroll forward four weeks">Later ›</button>
         <span class="lbl" style="margin-left:8px">Zoom</span>
+        <button type="button" class="chip" data-z="day" aria-pressed="false">Days</button>
         <button type="button" class="chip" data-z="week" aria-pressed="false">Weeks</button>
         <button type="button" class="chip" data-z="month" aria-pressed="false">Months</button>
         <button type="button" class="chip" data-z="fit" aria-pressed="false">Fit</button>
@@ -883,6 +890,7 @@ window.SEED = {
     { version: '0.9', date: '2026-10-20', by: 'Lee Englestone', notes: 'Storage reworked so the same app runs locally and on Netlify: plan items, photos and exports are kept as files locally and in Netlify Blobs when deployed, each item as its own record so simultaneous edits are never lost. Open browsers check for changes every 15 seconds. Backup and restore added to move the plan between machines. Existing data moved across automatically.' },
     { version: '0.10', date: '2026-10-20', by: 'Lee Englestone', notes: 'Deployed to Netlify, deploying automatically from GitHub. Save and delete buttons show a spinner while the change saves and ignore repeat clicks. "Depends on" is now a searchable dropdown of actions grouped by initiative. Next milestone removed from the roadmap row headings.' },
     { version: '0.11', date: '2026-10-20', by: 'Lee Englestone', notes: 'Clicking an action, milestone or leave entry on any page now opens its detail or editor in a pop-up over the page, instead of a panel at the bottom. Close it with ×, Escape or a click outside (a click outside does nothing while a form is open).' },
+    { version: '0.12', date: '2026-10-20', by: 'Lee Englestone', notes: 'Gantt: new Days zoom with each day labelled and weekends shaded; Earlier and Later move a week at a time in it. Month and horizon names stay in view while scrolling along the chart.' },
   ],
   questions: [
     ['Synthetic workers: the brief was cut off at "agents that will…"', 'I have assumed they are agents defined like staff roles: a remit, permitted tools, a named human confirmer, and measures. Please complete the sentence so the definition matches yours.'],
@@ -1314,7 +1322,9 @@ window.SEED = {
   function scrollGantt(to) {
     if (gs.zoom === 'fit') { gs.zoom = 'week'; store.set('harness-gzoom', 'week'); renderGanttTools(); renderGantt(); }
     const wrap = $('#gwrap'), g = gs.geo; if (!g) return;
-    const left = to === 'today' ? Math.max(0, g.x(TODAY) - 2 * 7 * g.px) : wrap.scrollLeft + (to === 'next' ? 1 : -1) * 4 * 7 * g.px;
+    // Days zoom steps a week at a time and puts today three days in; the others step four weeks and show two weeks before.
+    const days = gs.zoom === 'day';
+    const left = to === 'today' ? Math.max(0, g.x(TODAY) - (days ? 3 : 14) * g.px) : wrap.scrollLeft + (to === 'next' ? 1 : -1) * (days ? 7 : 28) * g.px;
     wrap.scrollLeft = left;   // an instant jump: smooth scrolling inside the chart box is not honoured by every browser
   }
   $('#gprev').onclick = () => scrollGantt('prev');
@@ -1368,25 +1378,29 @@ window.SEED = {
     let t0 = Math.min(...spanS) - 7 * DAY; t0 -= ((new Date(t0).getUTCDay() + 6) % 7) * DAY;
     const t1 = Math.max(...spanE) + 8 * 7 * DAY;   // eight spare weeks after the last item, so there is room to plan ahead
     const days = Math.round((t1 - t0) / DAY) + 1;
-    const px = gs.zoom === 'week' ? 20 : gs.zoom === 'month' ? 7 : Math.max(3, (wrap.clientWidth - lw - 2) / days);
+    const byDay = gs.zoom === 'day';
+    const px = byDay ? 48 : gs.zoom === 'week' ? 20 : gs.zoom === 'month' ? 7 : Math.max(3, (wrap.clientWidth - lw - 2) / days);
     const W = Math.ceil(days * px), x = t => (t - t0) / DAY * px;
     const body = $('#gbody');
-    body.style.setProperty('--lw', lw + 'px'); body.style.setProperty('--wk', 7 * px + 'px');
+    // Gridlines every week, or every day (with weekends shaded) in the Days zoom. t0 is always a Monday.
+    body.style.setProperty('--lw', lw + 'px'); body.style.setProperty('--wk', (byDay ? px : 7 * px) + 'px'); body.style.setProperty('--dy', px + 'px');
+    body.classList.toggle('days', byDay);
 
-    const seg = (s, e, label, cls = '') => `<div class="gseg ${cls}" style="left:${x(s)}px;width:${x(e + DAY) - x(s)}px" title="${esc(label)}">${esc(label)}</div>`;
+    const seg = (s, e, label, cls = '') => `<div class="gseg ${cls}" style="left:${x(s)}px;width:${x(e + DAY) - x(s)}px" title="${esc(label)}"><span>${esc(label)}</span></div>`;
     let months = '', m = Date.UTC(new Date(t0).getUTCFullYear(), new Date(t0).getUTCMonth(), 1);
     while (m <= t1) {
       const nm = Date.UTC(new Date(m).getUTCFullYear(), new Date(m).getUTCMonth() + 1, 1);
-      months += seg(Math.max(m, t0), Math.min(nm - DAY, t1), fmt(m, { month: px * 30 > 70 ? 'long' : 'short', year: 'numeric' }));
+      months += seg(Math.max(m, t0), Math.min(nm - DAY, t1), fmt(m, { month: px * 30 > 70 ? 'long' : 'short', year: 'numeric' }), 'mseg');
       m = nm;
     }
     let weeks = '';
-    for (let w = t0; w <= t1; w += 7 * DAY) weeks += seg(w, Math.min(w + 6 * DAY, t1), 7 * px >= 46 ? fmt(w) : 7 * px >= 18 ? String(new Date(w).getUTCDate()) : '');
+    if (byDay) for (let d = t0; d <= t1; d += DAY) { const wd = new Date(d).getUTCDay(); weeks += seg(d, d, fmt(d, { weekday: 'short', day: 'numeric' }), 'dseg' + (wd === 0 || wd === 6 ? ' wkend' : '')); }
+    else for (let w = t0; w <= t1; w += 7 * DAY) weeks += seg(w, Math.min(w + 6 * DAY, t1), 7 * px >= 46 ? fmt(w) : 7 * px >= 18 ? String(new Date(w).getUTCDate()) : '');
     const todayLbl = TODAY >= t0 && TODAY <= t1 ? `<span class="gtodaylbl" style="left:${x(TODAY) + px / 2}px">Today · ${fmt(TODAY)}</span>` : '';
     const grip = innerWidth < 640 ? '' : '<span class="lwgrip" title="Drag to widen or narrow the descriptions. Double-click to reset." role="separator" aria-orientation="vertical" aria-label="Resize the description column"></span>';
     let html = `<div class="grow h" style="top:0"><div class="glabel">Horizon${grip}</div><div class="gtrack" style="width:${W}px">${H.map(h => { const s = Math.max(h.s, t0), e = Math.min(h.e, t1); return s <= e ? seg(s, e, h.label, h.id === 'now' ? 'cur' : '') : ''; }).join('')}${todayLbl}</div></div>
       <div class="grow h" style="top:${HEAD}px"><div class="glabel">Month${grip}</div><div class="gtrack" style="width:${W}px">${months}</div></div>
-      <div class="grow h" style="top:${HEAD * 2}px"><div class="glabel">Week commencing${grip}</div><div class="gtrack" style="width:${W}px">${weeks}</div></div>`;
+      <div class="grow h" style="top:${HEAD * 2}px"><div class="glabel">${byDay ? 'Day' : 'Week commencing'}${grip}</div><div class="gtrack" style="width:${W}px">${weeks}</div></div>`;
 
     const rows = []; let y = HEAD * 3;
     const ownerOk = a => !gs.owner || (gs.owner === '-' ? !M.PBY[a.owner] : a.owner === gs.owner);
@@ -1466,7 +1480,7 @@ window.SEED = {
       if (M.usingLive) $$('.gbar, .gms', body).forEach(b => { enableDrag(b, 'action', b.dataset.a, px); enableKeys(b, b.dataset.a, px); });
       $$('.gleave', body).forEach(b => enableDrag(b, 'leave', b.dataset.lid, px));
     }
-    if (!gs.scrolled && gs.zoom !== 'fit') { wrap.scrollLeft = Math.max(0, x(TODAY) - 2 * 7 * px); gs.scrolled = true; }
+    if (!gs.scrolled && gs.zoom !== 'fit') { wrap.scrollLeft = Math.max(0, x(TODAY) - (byDay ? 3 : 14) * px); gs.scrolled = true; }
   }
   let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (gs.zoom === 'fit') renderGantt(); }, 120); });
 
