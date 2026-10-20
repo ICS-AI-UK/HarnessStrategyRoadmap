@@ -124,10 +124,15 @@ section.view { display: grid; gap: 22px; }
 .btn.ghost { background: var(--surface); color: var(--ink); border-color: var(--line); }
 .btn.danger { background: var(--surface); color: var(--bad); border-color: var(--bad); }
 .btn:disabled { opacity: .5; cursor: default; }
+/* A button whose save or delete is in progress: a small spinner, and further clicks are ignored (see markBusy). */
+[aria-busy="true"] { cursor: progress; opacity: .75; }
+[aria-busy="true"]::before { content: ""; display: inline-block; width: .8em; height: .8em; margin-right: .4em; vertical-align: -.1em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { [aria-busy="true"]::before { animation-duration: 2s; } }
 .x { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 16px; line-height: 1; padding: 4px 6px; border-radius: 3px; }
 .x:hover { color: var(--bad); background: var(--band); }
 .form { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; align-items: end; }
-.form label, .ed label { display: grid; gap: 3px; font-size: 12px; font-weight: 600; color: var(--muted); min-width: 0; }
+.form label, .ed label, .ed .lbl { display: grid; gap: 3px; font-size: 12px; font-weight: 600; color: var(--muted); min-width: 0; }
 .form .wide, .ed .wide { grid-column: 1 / -1; }
 input[type=text], input[type=date], input[type=number], select, textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 7px 9px; font-size: 14px; color: var(--ink); font-weight: 400; width: 100%; min-width: 0; }
 textarea { resize: vertical; min-height: 60px; }
@@ -174,6 +179,25 @@ textarea { resize: vertical; min-height: 60px; }
 .detail .sub b { color: var(--ink); display: block; margin-bottom: 2px; }
 .ed { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
 .ed .bar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* "Depends on" picker: a closed box listing the chosen actions that opens to a searchable checklist by initiative. */
+.msel { position: relative; }
+.msel > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 35px; padding: 4px 30px 4px 6px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; color: var(--ink); font-weight: 400; font-size: 13px; }
+.msel > summary::-webkit-details-marker { display: none; }
+.msel > summary::after { content: "▾"; position: absolute; right: 10px; top: 8px; color: var(--muted); }
+.msel[open] > summary { border-color: var(--accent); }
+.msel .tag { display: inline-flex; gap: 4px; align-items: center; padding: 2px 4px 2px 7px; border-radius: 3px; background: var(--band); border-left: 3px solid var(--ic, var(--line)); font-size: 12.5px; }
+.msel .tag button { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 14px; line-height: 1; padding: 0 3px; }
+.msel .tag button:hover { color: var(--bad); }
+.msel .none { color: var(--muted); padding-left: 3px; }
+.msel .pane { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px); background: var(--surface); border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 6px 20px rgb(0 0 0 / .15); padding: 8px; }
+.msel .opts { max-height: 280px; overflow-y: auto; margin-top: 6px; }
+.msel .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 700; margin: 8px 4px 2px; display: flex; gap: 6px; align-items: center; }
+.ed .msel .opts label { display: flex; gap: 8px; align-items: flex-start; padding: 5px 4px; border-radius: 3px; font-weight: 400; font-size: 13px; color: var(--ink); cursor: pointer; }
+.msel .opts label:hover { background: var(--band); }
+.msel .opts label b { flex: none; min-width: 2.6em; }
+.msel .opts label span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msel .opts label small { flex: none; color: var(--muted); font-family: var(--mono, monospace); font-size: 11.5px; padding-top: 1px; }
+.msel .opts input { width: auto; margin-top: 2px; }
 .ed .checkline { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--ink); font-weight: 500; }
 .note { font-size: 12.5px; color: var(--muted); }
 .err { color: var(--bad); font-size: 13px; }
@@ -493,7 +517,7 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 0 40px; }
 <header class="mast">
   <div class="wrap">
     <div class="top"><span class="eyebrow">ICS.ai · Strategy and plan · Draft for internal review</span><span class="sync" id="sync"><i></i><span>Loading plan…</span></span></div>
-    <div class="verline" id="verline"><button type="button" class="verbtn" id="verBtn" aria-expanded="false" aria-controls="history"><b>Version 0.9</b><span>Last updated 20 Oct 2026 by Lee Englestone</span></button><a class="verbtn" id="exportBtn" href="/api/export" download hidden title="One self-contained HTML file of the whole plan, with no editing. Opens on its own.">Download read-only copy</a><span class="lastedit" id="lastEdit"></span><form method="post" action="/logout" id="signOutForm" hidden style="margin-left:auto"><button type="submit" class="verbtn" title="Sign out of the plan on this browser">Sign out<span id="signedInAs"></span></button></form></div>
+    <div class="verline" id="verline"><button type="button" class="verbtn" id="verBtn" aria-expanded="false" aria-controls="history"><b>Version 0.10</b><span>Last updated 20 Oct 2026 by Lee Englestone</span></button><a class="verbtn" id="exportBtn" href="/api/export" download hidden title="One self-contained HTML file of the whole plan, with no editing. Opens on its own.">Download read-only copy</a><span class="lastedit" id="lastEdit"></span><form method="post" action="/logout" id="signOutForm" hidden style="margin-left:auto"><button type="submit" class="verbtn" title="Sign out of the plan on this browser">Sign out<span id="signedInAs"></span></button></form></div>
     <h1>The Harness Gen 3 ASE <span>Strategy and plan: from aspiration to implementation, from prototype to production</span></h1>
     <p class="lede">The Harness is the platform we deploy into a council's own cloud to host, connect and grow the apps and synthetic workers that run their services. This plan sets out six initiatives, who owns each piece of work, and a working demonstration every fortnight from this week onwards.</p>
     <div class="thesis">
@@ -853,6 +877,7 @@ window.SEED = {
     { version: '0.7', date: '2026-10-20', by: 'Lee Englestone', notes: 'New SMART LGR Workbench initiative; the two Workdesks and five priority services added. Roadmap columns roll with the date, with overdue flags and a hide-finished filter. Milestones (renamed from demo milestones) with a per-initiative track and on-track status. Add, reorder and link initiatives. New Synthetic Workers page. Gantt scrolls and resizes; Estate Management and initiative actions restyled. Exports show their UK time. Illustrative SMART target dates removed.' },
     { version: '0.8', date: '2026-10-20', by: 'Lee Englestone', notes: 'The app now sits behind a password with cookie sign-in, ready for a public address: sign-in page, 14-day sessions, sign out, lockout after repeated wrong passwords, and the name given at sign-in shown on changes. Notices above each page now have proper spacing.' },
     { version: '0.9', date: '2026-10-20', by: 'Lee Englestone', notes: 'Storage reworked so the same app runs locally and on Netlify: plan items, photos and exports are kept as files locally and in Netlify Blobs when deployed, each item as its own record so simultaneous edits are never lost. Open browsers check for changes every 15 seconds. Backup and restore added to move the plan between machines. Existing data moved across automatically.' },
+    { version: '0.10', date: '2026-10-20', by: 'Lee Englestone', notes: 'Deployed to Netlify, deploying automatically from GitHub. Save and delete buttons show a spinner while the change saves and ignore repeat clicks. "Depends on" is now a searchable dropdown of actions grouped by initiative. Next milestone removed from the roadmap row headings.' },
   ],
   questions: [
     ['Synthetic workers: the brief was cut off at "agents that will…"', 'I have assumed they are agents defined like staff roles: a remit, permitted tools, a named human confirmer, and measures. Please complete the sentence so the definition matches yours.'],
@@ -1016,8 +1041,30 @@ window.SEED = {
   const when = a => a.ms ? fmt(a.s, { weekday: 'short', day: 'numeric', month: 'short' }) : fmtR(a.s, a.e);
 
   /* ---------- writes ---------- */
+  // The button that started a save (a click on it, or Enter in its form) shows a spinner while the write is in flight,
+  // and clicks or submits on it are ignored until it finishes. Any other press clears it, so drag saves mark nothing.
+  let trigger = null;
+  document.addEventListener('pointerdown', () => { trigger = null; }, true);
+  document.addEventListener('keydown', () => { trigger = null; }, true);
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('button, label');
+    if (b && b.getAttribute('aria-busy') === 'true') { e.preventDefault(); e.stopImmediatePropagation(); return; }
+    trigger = b && b.tagName === 'BUTTON' ? b : null;
+  }, true);
+  document.addEventListener('submit', e => {
+    const f = e.target;
+    if (f.querySelector('[aria-busy="true"]')) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+    trigger = e.submitter || f.querySelector('button[type="submit"], button:not([type])');
+  }, true);
+  function markBusy(el) {
+    if (!el || !el.isConnected) return () => {};
+    el.dataset.busyN = String((+el.dataset.busyN || 0) + 1);
+    el.setAttribute('aria-busy', 'true');
+    return () => { const n = (+el.dataset.busyN || 1) - 1; el.dataset.busyN = String(n); if (!n) el.removeAttribute('aria-busy'); };
+  }
   async function write(fn, ok) {
     if (!db || !canWrite) { toast('This view is read-only.'); return false; }
+    const done = markBusy(trigger);
     try { await fn(); if (ok) toast(ok); noteEdit(); return true; }
     catch (e) {
       if (e && e.code === 'invalid_argument' && /permission|level|write/i.test(e.message || '')) { canWrite = false; renderAll(); toast('You can view this plan but not change it.'); }
@@ -1025,6 +1072,7 @@ window.SEED = {
       else toast('That change was not saved. Try again in a moment.');
       return false;
     }
+    finally { done(); }
   }
   // Every saved change stamps meta/lastEdit with the time and the editor's id (never their name), one write at a time.
   let myId = null, userCap = null, assetsCap = null, editChain = Promise.resolve();
@@ -1110,7 +1158,7 @@ window.SEED = {
         <label>End<input type="date" id="ed-end" value="${a ? iso(a.e) : iso(TODAY)}"></label>
         <label>Status<select id="ed-status">${Object.entries(STAT).map(([k, v]) => `<option value="${k}" ${a && a.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
         <label>Progress %<input type="number" id="ed-progress" min="0" max="100" step="5" value="${a ? a.p : 0}"></label>
-        <label class="wide">Depends on (IDs, comma separated)<input type="text" id="ed-deps" value="${esc(a ? a.deps.join(', ') : '')}" placeholder="e.g. H2, A5"></label>
+        <div class="wide lbl"><span id="ed-deps-l">Depends on</span>${depPicker(a)}</div>
         <label class="checkline"><input type="checkbox" id="ed-demo" ${a && a.demo ? 'checked' : ''}> Milestone</label>
         <p class="err wide" id="ed-err" hidden></p>
         <div class="bar"><button class="btn" type="submit">Save</button><button class="btn ghost" type="button" id="ed-cancel">Cancel</button>${a ? `<span style="flex:1"></span><button class="btn danger" type="button" id="ed-del">Delete action</button>` : ''}</div>
@@ -1125,7 +1173,7 @@ window.SEED = {
     $('#edForm', el).onsubmit = async e => {
       e.preventDefault();
       const err = $('#ed-err', el), start = $('#ed-start', el).value, end = $('#ed-end', el).value || start;
-      const deps = $('#ed-deps', el).value.split(/[\s,]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
+      const deps = $$('#ed-deps input[type=checkbox]:checked', el).map(x => x.value);
       const problem = !$('#ed-t', el).value.trim() ? 'Describe the action.' : isNaN(D(start)) ? 'Choose a start date.' : D(end) < D(start) ? 'The end date is before the start date.' : '';
       if (problem) { err.textContent = problem; err.hidden = false; return; }
       const init = a ? a.init : $('#ed-init', el).value;
@@ -1134,8 +1182,48 @@ window.SEED = {
         status: $('#ed-status', el).value, progress: +$('#ed-progress', el).value || 0, owner: $('#ed-owner', el).value, deps: deps.filter(d => d !== nid) });
       if (await write(() => db.doc('actions/' + nid).set(doc), (a ? 'Saved ' : 'Added ') + nid)) { editing = null; lastDetail[el.id] = nid; }
     };
+    bindDepPicker($('#ed-deps', el));
     $('#ed-t', el).focus();
   }
+  // The actions this one can depend on, grouped by initiative in plan order. IDs saved earlier that are no longer in
+  // the plan stay listed (and ticked) so saving does not drop them silently.
+  function depPicker(a) {
+    const sel = new Set(a ? a.deps : []);
+    const box = (x, label) => `<label data-q="${esc((x.id + ' ' + x.t).toLowerCase())}"><input type="checkbox" value="${esc(x.id)}" ${sel.has(x.id) ? 'checked' : ''}><b>${esc(x.id)}</b><span>${esc(x.t)}</span>${label ? `<small>${esc(label)}</small>` : ''}</label>`;
+    const groups = INITS.map(i => {
+      const acts = M.acts.filter(x => x.init === i.id && (!a || x.id !== a.id)).sort((x, y) => x.s - y.s);
+      return acts.length ? `<div class="grp"><i class="dot" style="background:${i.col}"></i>${esc(i.tag)}</div>` + acts.map(x => box(x, when(x))).join('') : '';
+    }).join('');
+    const gone = [...sel].filter(d => !M.BY[d]);
+    const lost = gone.length ? '<div class="grp">Not in the plan</div>' + gone.map(d => box({ id: d, t: 'No longer in the plan' })).join('') : '';
+    return `<details class="msel" id="ed-deps"><summary aria-labelledby="ed-deps-l"></summary><div class="pane">
+      <input type="text" placeholder="Search by ID or words" aria-label="Search actions"><div class="opts">${groups}${lost}</div></div></details>`;
+  }
+  function bindDepPicker(d) {
+    const sum = $('summary', d), q = $('.pane input[type=text]', d);
+    const draw = () => {
+      const on = $$('.opts input:checked', d).map(c => c.value);
+      sum.innerHTML = on.length ? on.map(id => { const x = M.BY[id]; return `<span class="tag" style="--ic:${x ? IBY[x.init].col : 'var(--bad)'}" title="${esc(x ? x.t : 'No longer in the plan')}">${esc(id)}<button type="button" data-undep="${esc(id)}" aria-label="Remove ${esc(id)}">×</button></span>`; }).join('') : '<span class="none">None. Choose the actions this one waits for</span>';
+    };
+    draw();
+    d.addEventListener('change', e => { if (e.target.type === 'checkbox') draw(); });
+    sum.addEventListener('click', e => {
+      const b = e.target.closest('[data-undep]'); if (!b) return;
+      e.preventDefault(); const c = $$('.opts input', d).find(x => x.value === b.dataset.undep); if (c) c.checked = false; draw();
+    });
+    q.addEventListener('input', () => {
+      const t = q.value.trim().toLowerCase();
+      $$('.opts label', d).forEach(l => { l.hidden = !!t && !l.dataset.q.includes(t); });
+      $$('.opts .grp', d).forEach(g => { let n = g.nextElementSibling, any = false; while (n && n.tagName === 'LABEL') { if (!n.hidden) any = true; n = n.nextElementSibling; } g.hidden = !any; });
+    });
+    // Enter in the search box ticks the only match instead of submitting the form; Escape closes the list.
+    q.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); const vis = $$('.opts label', d).filter(l => !l.hidden); if (vis.length === 1) { const c = $('input', vis[0]); c.checked = !c.checked; draw(); q.select(); } }
+      if (e.key === 'Escape') { e.preventDefault(); d.open = false; sum.focus(); }
+    });
+    d.addEventListener('toggle', () => { if (d.open) q.focus(); });
+  }
+  document.addEventListener('pointerdown', e => $$('details.msel[open]').forEach(d => { if (!d.contains(e.target)) d.open = false; }));
 
   /* ---------- roadmap grid ---------- */
   let filterInit = null, demoOnly = false;
@@ -1587,7 +1675,11 @@ window.SEED = {
     c.getContext('2d').drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, out, out);
     return await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('encode')), 'image/jpeg', 0.86));
   }
-  async function uploadPhoto(pid, file) {
+  async function uploadPhoto(pid, file, busyEl) {
+    const done = markBusy(busyEl);
+    try { await uploadPhotoNow(pid, file); } finally { done(); }
+  }
+  async function uploadPhotoNow(pid, file) {
     const p = M.PBY[pid]; if (!p || !file) return;
     if (!assetsCap) { toast('Only people who can edit this page can upload photos.'); return; }
     let blob; try { blob = await squareJpeg(file); } catch (e) { toast('That image could not be read. Use a JPEG or PNG.'); return; }
@@ -1636,7 +1728,7 @@ window.SEED = {
       if (!cards.contains(document.activeElement) || !document.activeElement.matches('input[type=file]')) {
         cards.innerHTML = M.people.map(personCard).join('') + personCard(null);
         $$('[data-goto]', cards).forEach(b => b.onclick = () => { window.showView('roadmap'); showDetail(b.dataset.goto, $('#detail')); });
-        $$('[data-photo]', cards).forEach(i => i.onchange = () => { const f = i.files && i.files[0]; if (f) uploadPhoto(i.dataset.photo, f); });
+        $$('[data-photo]', cards).forEach(i => i.onchange = () => { const f = i.files && i.files[0]; if (f) uploadPhoto(i.dataset.photo, f, i.closest('label')); });
         $$('[data-unphoto]', cards).forEach(b => b.onclick = () => removePhoto(b.dataset.unphoto));
       }
     }
