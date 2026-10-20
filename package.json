@@ -1,6 +1,6 @@
 {
   "name": "harness-plan",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "private": true,
   "description": "Harness Gen 3 ASE strategy and plan: a small web app with live editing, shared storage (local files or Netlify Blobs) and read-only HTML exports.",
   "type": "module",

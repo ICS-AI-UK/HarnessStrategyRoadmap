@@ -177,6 +177,14 @@ textarea { resize: vertical; min-height: 60px; }
 .detail.empty { color: var(--muted); border-top-color: var(--line); }
 .detail .sub { font-size: 13px; color: var(--muted); }
 .detail .sub b { color: var(--ink); display: block; margin-bottom: 2px; }
+/* Action detail and editors open in one modal, whichever page they are opened from. */
+dialog.mdl { padding: 0; border: 0; background: transparent; width: min(760px, calc(100vw - 32px)); max-width: none; max-height: none; overflow: visible; color: var(--ink); }
+dialog.mdl::backdrop { background: rgb(0 0 0 / .45); }
+dialog.mdl .detail { max-height: calc(100dvh - 48px); overflow-y: auto; padding-right: 52px; box-shadow: 0 18px 50px rgb(0 0 0 / .3); }
+.mclose { position: absolute; top: 12px; right: 12px; z-index: 2; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; }
+.mclose:hover { color: var(--ink); background: var(--band); }
+@media (prefers-reduced-motion: no-preference) { dialog.mdl[open] { animation: mdlin .16s ease-out; } }
+@keyframes mdlin { from { opacity: 0; transform: translateY(8px); } }
 .ed { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
 .ed .bar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 /* "Depends on" picker: a closed box listing the chosen actions that opens to a searchable checklist by initiative. */
@@ -398,7 +406,6 @@ table.reg td:first-child { min-width: 190px; }
 .hzcol.now h4 .cnt { order: 2; margin-left: auto; }
 .hzcol.earlier { background: var(--band); }
 .hznone { padding: 16px 20px; color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--line); }
-.idet { margin: 0 14px 14px; }
 
 /* milestones: status pills, the per-initiative track, and the next-milestone line */
 .mst { display: inline-block; font: 600 10.5px var(--body); padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; letter-spacing: .02em; }
@@ -508,7 +515,8 @@ ol.qs li::before { content: 'Q' counter(q); position: absolute; left: 16px; top:
 ol.qs b { display: block; margin-bottom: 4px; }
 ol.qs p { color: var(--muted); font-size: 14px; }
 
-.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 4px; font-size: 13.5px; z-index: 50; max-width: calc(100% - 32px); }
+/* A popover, so it shows above the modal too. */
+.toast { position: fixed; inset: auto auto calc(18px + env(safe-area-inset-bottom, 0px)) 50%; margin: 0; border: 0; height: auto; width: max-content; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 4px; font-size: 13.5px; z-index: 50; max-width: calc(100% - 32px); }
 footer { color: var(--muted); font-size: 12.5px; padding-block: 0 40px; }
 @media (max-width: 640px) { .hz > div, .steps > div { border-right: 0; border-bottom: 1px solid var(--line); } .todo { grid-template-columns: 26px minmax(0, 1fr) auto; } .todo .who { display: none; } }
 @media (prefers-reduced-motion: no-preference) { .act, .chip { transition: background .15s, opacity .15s; } }
@@ -517,7 +525,7 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 0 40px; }
 <header class="mast">
   <div class="wrap">
     <div class="top"><span class="eyebrow">ICS.ai · Strategy and plan · Draft for internal review</span><span class="sync" id="sync"><i></i><span>Loading plan…</span></span></div>
-    <div class="verline" id="verline"><button type="button" class="verbtn" id="verBtn" aria-expanded="false" aria-controls="history"><b>Version 0.10</b><span>Last updated 20 Oct 2026 by Lee Englestone</span></button><a class="verbtn" id="exportBtn" href="/api/export" download hidden title="One self-contained HTML file of the whole plan, with no editing. Opens on its own.">Download read-only copy</a><span class="lastedit" id="lastEdit"></span><form method="post" action="/logout" id="signOutForm" hidden style="margin-left:auto"><button type="submit" class="verbtn" title="Sign out of the plan on this browser">Sign out<span id="signedInAs"></span></button></form></div>
+    <div class="verline" id="verline"><button type="button" class="verbtn" id="verBtn" aria-expanded="false" aria-controls="history"><b>Version 0.11</b><span>Last updated 20 Oct 2026 by Lee Englestone</span></button><a class="verbtn" id="exportBtn" href="/api/export" download hidden title="One self-contained HTML file of the whole plan, with no editing. Opens on its own.">Download read-only copy</a><span class="lastedit" id="lastEdit"></span><form method="post" action="/logout" id="signOutForm" hidden style="margin-left:auto"><button type="submit" class="verbtn" title="Sign out of the plan on this browser">Sign out<span id="signedInAs"></span></button></form></div>
     <h1>The Harness Gen 3 ASE <span>Strategy and plan: from aspiration to implementation, from prototype to production</span></h1>
     <p class="lede">The Harness is the platform we deploy into a council's own cloud to host, connect and grow the apps and synthetic workers that run their services. This plan sets out six initiatives, who owns each piece of work, and a working demonstration every fortnight from this week onwards.</p>
     <div class="thesis">
@@ -600,7 +608,6 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 0 40px; }
     </div>
     <div class="legend"><span><i class="diamond"></i> Milestone</span><span><i class="ini none">?</i> No owner yet</span><span><button type="button" class="chip" id="demoOnly" aria-pressed="false"><i class="diamond"></i> Show milestones only</button></span><span><button type="button" class="chip" id="hideDone" aria-pressed="false">Hide finished work</button></span><span><i class="odp">Overdue</i> Past its end date and not done</span><span style="margin-left:auto"><button type="button" class="btn" id="addAction2" hidden>Add action</button></span></div>
     <div class="gridscroll"><div class="rgrid" id="rgrid"></div></div>
-    <div class="detail empty" id="detail">Select an action in the grid to see its detail.</div>
   </section>
 
   <section class="view" id="v-gantt" hidden>
@@ -630,10 +637,7 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 0 40px; }
     <div class="gtools"><div class="grp"><span class="lbl">Owner</span><select id="gowner" style="width:auto"></select></div></div>
     <div class="gwrap" id="gwrap"><div class="gbody" id="gbody"></div></div>
     <div class="legend"><span><i style="width:0;height:14px;border-left:2.5px solid var(--bad);display:inline-block"></i> Today</span><span><i class="diamond"></i> Milestone</span><span><i style="width:22px;height:10px;border:1.5px solid var(--muted);border-radius:2px;display:inline-block"></i> Action (fill shows progress)</span><span><i style="width:22px;height:10px;background:repeating-linear-gradient(135deg,var(--leave) 0 3px,transparent 3px 7px);display:inline-block"></i> On leave</span><span><i style="width:16px;height:10px;border:2px dashed var(--bad);display:inline-block;border-radius:2px"></i> Blocked</span></div>
-    <div class="two">
-      <div class="detail empty" id="gdetail">Select a bar or row to see its detail.</div>
-      <div class="panel checks" id="gchecks"></div>
-    </div>
+    <div class="panel checks" id="gchecks"></div>
   </section>
 
   <section class="view" id="v-todo" hidden>
@@ -702,7 +706,6 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 0 40px; }
   <section class="view" id="v-estate" hidden>
     <div class="viewhead"><div><h2>Estate Management</h2><p>Estate Management covers everything we need to know and do about a council's apps. We discover what they use, record it in the App Register, decide what happens to each app, and then wrap or rebuild it through the Harness. The SME engine writes into the register, and the Harness prints from it.</p></div></div>
     <div class="epipe" id="estateSteps"></div>
-    <div class="detail empty" id="edetail">Select an action above to see its detail.</div>
     <div class="viewhead" style="margin-top:8px"><div><h3 style="font-size:22px">App Register</h3><p>The single list of every app on a council's journeys. The rows below are examples taken from the building compliance reference run, to show the shape.</p></div><div class="chips" id="ffilter"></div></div>
     <div class="tscroll"><table class="t reg" id="reg"></table></div>
     <div class="two">
@@ -724,7 +727,8 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 0 40px; }
   </section>
 </main>
 <footer class="wrap">Draft plan. Owners and dates are proposals until confirmed. The reference journey, app actions and AI assistant names come from the SME engine run of 18 Oct 2026 (building compliance certificate validation).</footer>
-<div class="toast" id="toast" hidden role="status"></div>
+<dialog class="mdl" id="mdl" aria-label="Action detail"><button type="button" class="mclose" id="mclose" aria-label="Close">×</button><div class="detail" id="mbody"></div></dialog>
+<div class="toast" id="toast" popover="manual" role="status"></div>
 <div class="dragtip" id="dragtip" hidden></div>
 
 <script>
@@ -878,6 +882,7 @@ window.SEED = {
     { version: '0.8', date: '2026-10-20', by: 'Lee Englestone', notes: 'The app now sits behind a password with cookie sign-in, ready for a public address: sign-in page, 14-day sessions, sign out, lockout after repeated wrong passwords, and the name given at sign-in shown on changes. Notices above each page now have proper spacing.' },
     { version: '0.9', date: '2026-10-20', by: 'Lee Englestone', notes: 'Storage reworked so the same app runs locally and on Netlify: plan items, photos and exports are kept as files locally and in Netlify Blobs when deployed, each item as its own record so simultaneous edits are never lost. Open browsers check for changes every 15 seconds. Backup and restore added to move the plan between machines. Existing data moved across automatically.' },
     { version: '0.10', date: '2026-10-20', by: 'Lee Englestone', notes: 'Deployed to Netlify, deploying automatically from GitHub. Save and delete buttons show a spinner while the change saves and ignore repeat clicks. "Depends on" is now a searchable dropdown of actions grouped by initiative. Next milestone removed from the roadmap row headings.' },
+    { version: '0.11', date: '2026-10-20', by: 'Lee Englestone', notes: 'Clicking an action, milestone or leave entry on any page now opens its detail or editor in a pop-up over the page, instead of a panel at the bottom. Close it with ×, Escape or a click outside (a click outside does nothing while a form is open).' },
   ],
   questions: [
     ['Synthetic workers: the brief was cut off at "agents that will…"', 'I have assumed they are agents defined like staff roles: a remit, permitted tools, a named human confirmer, and measures. Please complete the sentence so the definition matches yours.'],
@@ -906,7 +911,13 @@ window.SEED = {
   const now = new Date(), TODAY = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const STAT = { planned: 'Planned', 'in-progress': 'In progress', done: 'Done', blocked: 'Blocked' };
-  const toast = msg => { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 2600); };
+  const toast = msg => {
+    const t = $('#toast'); t.textContent = msg;
+    // Shown again each time so it lands above a modal opened since (each top-layer entry goes on top).
+    try { t.hidePopover(); } catch (e) {}
+    try { t.showPopover(); } catch (e) {}
+    clearTimeout(toast.h); toast.h = setTimeout(() => { try { t.hidePopover(); } catch (e) {} }, 2600);
+  };
 
   /* ---------- state ---------- */
   const live = { actions: null, inits: null, people: null, leave: null, todos: null, versions: null, meta: null };
@@ -1119,11 +1130,22 @@ window.SEED = {
     document.body.classList.toggle('editing', ed());
   }
   $('#modeBtn').onclick = () => { editMode = !editMode; inlineEdit = null; editing = null; renderAll(); toast(editMode ? 'Edit mode on. Changes save for everyone.' : 'Back to read-only.'); };
-  $('#addAction2').onclick = () => openEditor(null, $('#detail'));
+  $('#addAction2').onclick = () => openEditor(null, MB);
 
   /* ---------- detail / editor ---------- */
   let editing = null;   // { el, id } while a form is open
   let lastDetail = {};  // el id -> action id
+  // Detail and editors render into #mbody inside the #mdl dialog. Closing it (×, Escape, or a click outside when no
+  // form is open) clears the selection.
+  const dlg = $('#mdl'), MB = $('#mbody');
+  const openModal = () => { if (!dlg.open) dlg.showModal(); };
+  const closeModal = () => { if (dlg.open) dlg.close(); };
+  $('#mclose').onclick = closeModal;
+  dlg.addEventListener('click', e => { if (e.target === dlg && !editing) closeModal(); });
+  dlg.addEventListener('close', () => {
+    editing = null; delete lastDetail.mbody; MB.innerHTML = '';
+    gs.sel = null; $$('.ecard.sel, .grow.sel').forEach(c => c.classList.remove('sel'));
+  });
   function showDetail(id, el) {
     const a = M.BY[id]; if (!a) { el.className = 'detail empty'; el.textContent = 'That action is no longer in the plan.'; return; }
     lastDetail[el.id] = id; if (editing && editing.el === el) editing = null;
@@ -1141,7 +1163,7 @@ window.SEED = {
       ${a.clash ? `<div class="err">Starts before something it depends on has finished.</div>` : ''}
       ${ed() && M.usingLive ? `<div><button class="btn ghost" type="button" data-edit="${esc(a.id)}">Edit this action</button></div>` : canWrite && db && M.usingLive ? `<p class="note">Switch on edit mode (top right of the tab bar) to change this action.</p>` : ''}`;
     const eb = el.querySelector('[data-edit]'); if (eb) eb.onclick = () => openEditor(a.id, el);
-    el.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
+    openModal();
   }
   function openEditor(id, el) {
     const a = id ? M.BY[id] : null;
@@ -1164,11 +1186,11 @@ window.SEED = {
         <div class="bar"><button class="btn" type="submit">Save</button><button class="btn ghost" type="button" id="ed-cancel">Cancel</button>${a ? `<span style="flex:1"></span><button class="btn danger" type="button" id="ed-del">Delete action</button>` : ''}</div>
       </form>
       ${M.people.length ? '' : '<p class="note">No one is on the team list yet. Add people on the Team and leave tab to assign owners.</p>'}`;
-    $('#ed-cancel', el).onclick = () => { editing = null; a ? showDetail(a.id, el) : (el.className = 'detail empty', el.textContent = 'Select a bar or row to see its detail.'); };
+    $('#ed-cancel', el).onclick = () => { editing = null; a ? showDetail(a.id, el) : closeModal(); };
     const del = $('#ed-del', el);
     if (del) del.onclick = async () => {
       if (del.dataset.confirm !== '1') { del.dataset.confirm = '1'; del.textContent = 'Click again to delete ' + a.id; return; }
-      if (await write(() => db.doc('actions/' + a.id).delete(), a.id + ' deleted')) { editing = null; el.className = 'detail empty'; el.textContent = 'Select an action to see its detail.'; }
+      if (await write(() => db.doc('actions/' + a.id).delete(), a.id + ' deleted')) closeModal();
     };
     $('#edForm', el).onsubmit = async e => {
       e.preventDefault();
@@ -1180,9 +1202,10 @@ window.SEED = {
       const nid = a ? a.id : init + (Math.max(0, ...M.acts.filter(x => x.init === init).map(x => parseInt(x.id.slice(init.length), 10) || 0)) + 1);
       const doc = actionDoc({ ...(a || {}), init, t: $('#ed-t', el).value.trim(), why: $('#ed-why', el).value.trim(), start, end, demo: $('#ed-demo', el).checked,
         status: $('#ed-status', el).value, progress: +$('#ed-progress', el).value || 0, owner: $('#ed-owner', el).value, deps: deps.filter(d => d !== nid) });
-      if (await write(() => db.doc('actions/' + nid).set(doc), (a ? 'Saved ' : 'Added ') + nid)) { editing = null; lastDetail[el.id] = nid; }
+      if (await write(() => db.doc('actions/' + nid).set(doc), (a ? 'Saved ' : 'Added ') + nid)) { editing = null; lastDetail[el.id] = nid; if (M.BY[nid]) showDetail(nid, el); }
     };
     bindDepPicker($('#ed-deps', el));
+    openModal();
     $('#ed-t', el).focus();
   }
   // The actions this one can depend on, grouped by initiative in plan order. IDs saved earlier that are no longer in
@@ -1249,7 +1272,7 @@ window.SEED = {
       });
     });
     g.innerHTML = html;
-    $$('.act', g).forEach(b => b.onclick = () => ed() && M.usingLive ? openEditor(b.dataset.a, $('#detail')) : showDetail(b.dataset.a, $('#detail')));
+    $$('.act', g).forEach(b => b.onclick = () => ed() && M.usingLive ? openEditor(b.dataset.a, MB) : showDetail(b.dataset.a, MB));
   }
   $('#demoOnly').onclick = e => { demoOnly = !demoOnly; e.currentTarget.setAttribute('aria-pressed', String(demoOnly)); renderGrid(); };
   // "Hide finished work" is one setting shared by the Roadmap and the Gantt, remembered in this browser.
@@ -1285,7 +1308,7 @@ window.SEED = {
     gs.collapsed = all ? new Set() : new Set(INITS.map(i => i.id));
     store.set('harness-gcollapsed', [...gs.collapsed].join(',')); renderGanttTools(); renderGantt();
   };
-  $('#addAction').onclick = () => openEditor(null, $('#gdetail'));
+  $('#addAction').onclick = () => openEditor(null, MB);
 
   // Moving along the timeline: Earlier / Today / Later buttons, and dragging the chart background to pan.
   function scrollGantt(to) {
@@ -1434,11 +1457,11 @@ window.SEED = {
       const id = b.dataset.tog; gs.collapsed.has(id) ? gs.collapsed.delete(id) : gs.collapsed.add(id);
       store.set('harness-gcollapsed', [...gs.collapsed].join(',')); renderGanttTools(); renderGantt();
     });
-    const pick = id => { gs.sel = id; $$('.grow.sel', body).forEach(r => r.classList.remove('sel')); body.querySelector(`[data-row="${CSS.escape(id)}"]`)?.classList.add('sel'); showDetail(id, $('#gdetail')); };
-    const open = id => { if (suppressClick) return; ed() && M.usingLive ? (gs.sel = id, $$('.grow.sel', body).forEach(r => r.classList.remove('sel')), body.querySelector(`[data-row="${CSS.escape(id)}"]`)?.classList.add('sel'), openEditor(id, $('#gdetail'))) : pick(id); };
+    const pick = id => { gs.sel = id; $$('.grow.sel', body).forEach(r => r.classList.remove('sel')); body.querySelector(`[data-row="${CSS.escape(id)}"]`)?.classList.add('sel'); showDetail(id, MB); };
+    const open = id => { if (suppressClick) return; ed() && M.usingLive ? (gs.sel = id, $$('.grow.sel', body).forEach(r => r.classList.remove('sel')), body.querySelector(`[data-row="${CSS.escape(id)}"]`)?.classList.add('sel'), openEditor(id, MB)) : pick(id); };
     $$('[data-a]', body).forEach(b => b.onclick = () => open(b.dataset.a));
     $$('.act-row .glabel', body).forEach(l => l.onclick = () => open(l.parentElement.dataset.row));
-    $$('.gleave', body).forEach(b => b.onclick = () => { if (!suppressClick && ed()) openLeaveEditor(b.dataset.lid, $('#gdetail')); });
+    $$('.gleave', body).forEach(b => b.onclick = () => { if (!suppressClick && ed()) openLeaveEditor(b.dataset.lid, MB); });
     if (ed()) {
       if (M.usingLive) $$('.gbar, .gms', body).forEach(b => { enableDrag(b, 'action', b.dataset.a, px); enableKeys(b, b.dataset.a, px); });
       $$('.gleave', body).forEach(b => enableDrag(b, 'leave', b.dataset.lid, px));
@@ -1517,7 +1540,8 @@ window.SEED = {
       <label>From<input type="date" id="lve-start" value="${iso(l.s)}" required></label><label>To<input type="date" id="lve-end" value="${iso(l.e)}" required></label>
       <label class="wide">Note<input type="text" id="lve-note" maxlength="80" value="${esc(l.note || '')}"></label>
       <div class="bar"><button class="btn" type="submit">Save</button><button class="btn ghost" type="button" id="lve-cancel">Cancel</button><span style="flex:1"></span><button class="btn danger" type="button" id="lve-del">Delete leave</button></div></form>`;
-    const done = () => { editing = null; el.className = 'detail empty'; el.textContent = 'Select a bar or row to see its detail.'; };
+    openModal();
+    const done = closeModal;
     $('#lve-cancel', el).onclick = done;
     $('#lve-del', el).onclick = async e => { const b = e.currentTarget; if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Click again to delete'; return; } if (await write(() => db.doc('leave/' + lid).delete(), 'Leave removed')) done(); };
     $('#lvEd', el).onsubmit = async e => {
@@ -1591,7 +1615,7 @@ window.SEED = {
     });
     $$('[data-td]', el).forEach(c => c.onchange = () => write(() => db.doc('todos/' + c.dataset.td).update({ done: c.checked, doneAt: c.checked ? iso(TODAY) : '' })));
     $$('[data-tdx]', el).forEach(b => b.onclick = () => write(() => db.doc('todos/' + b.dataset.tdx).delete(), 'To-do deleted'));
-    $$('[data-goto]', el).forEach(b => b.onclick = () => { window.showView('roadmap'); showDetail(b.dataset.goto, $('#detail')); });
+    $$('[data-goto]', el).forEach(b => b.onclick = () => { window.showView('roadmap'); showDetail(b.dataset.goto, MB); });
   }
   $('#todoForm').onsubmit = async e => {
     e.preventDefault();
@@ -1727,7 +1751,7 @@ window.SEED = {
       const cards = $('#pcards');
       if (!cards.contains(document.activeElement) || !document.activeElement.matches('input[type=file]')) {
         cards.innerHTML = M.people.map(personCard).join('') + personCard(null);
-        $$('[data-goto]', cards).forEach(b => b.onclick = () => { window.showView('roadmap'); showDetail(b.dataset.goto, $('#detail')); });
+        $$('[data-goto]', cards).forEach(b => b.onclick = () => { window.showView('roadmap'); showDetail(b.dataset.goto, MB); });
         $$('[data-photo]', cards).forEach(i => i.onchange = () => { const f = i.files && i.files[0]; if (f) uploadPhoto(i.dataset.photo, f, i.closest('label')); });
         $$('[data-unphoto]', cards).forEach(b => b.onclick = () => removePhoto(b.dataset.unphoto));
       }
@@ -1849,13 +1873,12 @@ window.SEED = {
       <ol class="mstrack">${ms.map(m => `<li class="${m.mstate} ${m === nx ? 'next' : ''}"><i class="md"></i><button type="button" data-ms="${esc(m.id)}" title="${esc(m.id + ' · ' + MSTATE[m.mstate] + (m.mwhy.length ? ': ' + m.mwhy.join('; ') : ''))}">
         <span class="mdate">${when(m)}${m === nx ? ' <span class="nexttag">NEXT</span>' : ''}</span><span class="mtitle">${esc(m.t)}</span><span>${msPill(m)}</span></button></li>`).join('')}</ol></div>`;
   }
-  // An initiative's actions as horizon columns of cards, earliest first, with a detail panel (id panelId) beneath.
-  function hzHtml(acts, panelId) {
+  // An initiative's actions as horizon columns of cards, earliest first.
+  function hzHtml(acts) {
     const cols = H.filter(h => acts.some(a => a.h === h.id));
     if (!cols.length) return '<p class="hznone">No actions yet.</p>';
     return `<div class="hzrow">${cols.map(h => { const list = acts.filter(a => a.h === h.id).sort((p, q) => p.s - q.s);
-      return `<div class="hzcol ${h.id === 'now' ? 'now' : ''} ${h.id === 'earlier' ? 'earlier' : ''}"><h4>${esc(h.label)}<span class="cnt">${list.length}</span></h4><span class="hzr">${esc(h.range)}</span><ul class="elist">${list.map(a => actCard(a, lastDetail[panelId] === a.id)).join('')}</ul></div>`; }).join('')}</div>
-      <div class="idet"><div class="detail empty" id="${panelId}">Select an action to see its detail.</div></div>`;
+      return `<div class="hzcol ${h.id === 'now' ? 'now' : ''} ${h.id === 'earlier' ? 'earlier' : ''}"><h4>${esc(h.label)}<span class="cnt">${list.length}</span></h4><span class="hzr">${esc(h.range)}</span><ul class="elist">${list.map(a => actCard(a, lastDetail.mbody === a.id)).join('')}</ul></div>`; }).join('')}</div>`;
   }
 
   /* ---------- action card (Initiatives and Estate Management pages) ---------- */
@@ -1863,11 +1886,10 @@ window.SEED = {
       <span class="t1"><span class="eid">${esc(a.id)}</span>${a.demo ? '<i class="diamond" title="Milestone"></i>' : ''}<span class="statpill st-${esc(a.status)}">${esc(STAT[a.status] || a.status)}${a.p && a.status !== 'done' ? ` · ${a.p}%` : ''}</span>${a.overdue ? '<span class="odp">Overdue</span>' : ''}</span>
       <span class="etx">${esc(a.t)}</span>
       <span class="t3">${chip(a.owner)}<span>${when(a)}</span></span></button></li>`;
-  // Clicking a card selects it and opens its detail (or the editor, in edit mode) in the given panel.
-  const bindCards = (scope, panelFor) => $$('[data-ea]', scope).forEach(b => b.onclick = () => {
-    const panel = panelFor(b);
-    $$('.ecard.sel', b.closest('.hzrow, .epipe') || scope).forEach(c => c.classList.remove('sel')); b.classList.add('sel');
-    ed() && M.usingLive ? openEditor(b.dataset.ea, panel) : showDetail(b.dataset.ea, panel);
+  // Clicking a card selects it and opens its detail (or the editor, in edit mode) in the modal.
+  const bindCards = scope => $$('[data-ea]', scope).forEach(b => b.onclick = () => {
+    $$('.ecard.sel').forEach(c => c.classList.remove('sel')); b.classList.add('sel');
+    ed() && M.usingLive ? openEditor(b.dataset.ea, MB) : showDetail(b.dataset.ea, MB);
   });
 
   /* ---------- initiatives ---------- */
@@ -1913,7 +1935,7 @@ window.SEED = {
       ${linksHtml(i, 'inits')}
       </div></div>
       ${msBoxHtml(i)}
-      <details class="acts" ${openInits.has(i.id) ? 'open' : ''} data-init="${i.id}"><summary>Actions by horizon</summary>${hzHtml(acts, 'idet-' + i.id)}</details>
+      <details class="acts" ${openInits.has(i.id) ? 'open' : ''} data-init="${i.id}"><summary>Actions by horizon</summary>${hzHtml(acts)}</details>
     </article>`; }).join('');
     $$('[data-iown]').forEach(s => s.onchange = () => write(() => db.doc('inits/' + s.dataset.iown).set(initDoc(IBY[s.dataset.iown], { owner: s.value })), 'Owner updated'));
     $$('[data-ie]').forEach(b => b.onclick = () => { inlineEdit = { section: 'inits', kind: 'init', id: b.dataset.ie }; renderInits(); $('#inits .inl input')?.focus(); });
@@ -1953,15 +1975,12 @@ window.SEED = {
       }
     });
     $$('details.acts').forEach(d => d.ontoggle = () => { d.open ? openInits.add(d.dataset.init) : openInits.delete(d.dataset.init); });
-    bindCards($('#inits'), b => $('#idet-' + CSS.escape(b.closest('details.acts').dataset.init)));
+    bindCards($('#inits'));
     bindLinks($('#inits'), 'inits', renderInits);
-    // Clicking a milestone opens the initiative's actions and shows that milestone's detail there.
+    // Clicking a milestone shows its detail.
     $$('#inits [data-ms]').forEach(b => b.onclick = () => {
       const a = M.BY[b.dataset.ms]; if (!a) return;
-      const det = $(`details.acts[data-init="${CSS.escape(a.init)}"]`); if (!det) return;
-      det.open = true; openInits.add(a.init);
-      const panel = $('#idet-' + CSS.escape(a.init));
-      if (panel) { ed() && M.usingLive ? openEditor(a.id, panel) : showDetail(a.id, panel); }
+      ed() && M.usingLive ? openEditor(a.id, MB) : showDetail(a.id, MB);
     });
   }
   const openInits = new Set();
@@ -1989,11 +2008,11 @@ window.SEED = {
       </div></div>
       ${msBoxHtml(i)}
       <div class="acthead">Actions by horizon</div>
-      ${hzHtml(acts, 'wdet')}
+      ${hzHtml(acts)}
     </article>`;
-    bindCards(el, () => $('#wdet'));
+    bindCards(el);
     bindLinks(el, 'workers', renderWorkers);
-    $$('[data-ms]', el).forEach(b => b.onclick = () => { const a = M.BY[b.dataset.ms]; if (a) (ed() && M.usingLive ? openEditor(a.id, $('#wdet')) : showDetail(a.id, $('#wdet'))); });
+    $$('[data-ms]', el).forEach(b => b.onclick = () => { const a = M.BY[b.dataset.ms]; if (a) (ed() && M.usingLive ? openEditor(a.id, MB) : showDetail(a.id, MB)); });
     const eb = $('#wEditInit');
     if (eb) eb.onclick = () => { window.showView('inits'); inlineEdit = { section: 'inits', kind: 'init', id: 'S' }; renderInits(); $('#inits .inl')?.scrollIntoView({ block: 'start' }); $('#inits .inl input')?.focus(); };
   }
@@ -2001,7 +2020,7 @@ window.SEED = {
   /* ---------- estate ---------- */
   let fate = null;
   function renderEstate() {
-    const card = a => actCard(a, lastDetail.edetail === a.id);
+    const card = a => actCard(a, lastDetail.mbody === a.id);
     const estateActs = M.acts.filter(a => a.init === 'A').sort((p, q) => p.s - q.s);
     const part = (n, name, text, acts, extra = '') => {
       const done = acts.filter(a => a.status === 'done').length, pct = acts.length ? Math.round(done / acts.length * 100) : 0;
@@ -2012,7 +2031,7 @@ window.SEED = {
     const other = estateActs.filter(a => !S.estate.some(st => st.id === a.stream));
     $('#estateSteps').innerHTML = S.estate.map((st, n) => part(n + 1, st.name, st.text, estateActs.filter(a => a.stream === st.id))).join('')
       + (other.length ? part(0, 'Other Estate Management actions', '', other, 'eother') : '');
-    bindCards($('#estateSteps'), () => $('#edetail'));
+    bindCards($('#estateSteps'));
     const fs = [...new Set(S.register.map(r => r.fate))];
     $('#ffilter').innerHTML = [`<button type="button" class="chip" data-f="" aria-pressed="${!fate}">All actions</button>`].concat(fs.map(f => `<button type="button" class="chip" data-f="${esc(f)}" aria-pressed="${fate === f}">${esc(f)}</button>`)).join('');
     $$('#ffilter button').forEach(b => b.onclick = () => { fate = b.dataset.f || null; renderEstate(); });
@@ -2054,7 +2073,8 @@ window.SEED = {
   /* ---------- render all ---------- */
   function renderAll() {
     build(); renderSync(); renderVersion(); renderGrid(); renderGanttTools(); renderGantt(); renderChecks(); renderTodos(); renderTeam(); renderInits(); renderWorkers(); renderEstate(); renderSmart();
-    for (const [elId, aid] of Object.entries(lastDetail)) { const el = document.getElementById(elId); if (el && !(editing && editing.el === el)) showDetail(aid, el); }
+    // Refresh the open detail with the new data (a form being filled in is left alone).
+    if (dlg.open && lastDetail.mbody && !editing) showDetail(lastDetail.mbody, MB);
   }
   document.addEventListener('viewchange', e => { view = e.detail; if (view === 'gantt' && M) renderGantt(); });
   view = ($('nav.tabs [aria-current="page"]') || {}).dataset?.view || 'roadmap';
