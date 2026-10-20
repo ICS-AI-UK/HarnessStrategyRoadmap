@@ -1,0 +1,20 @@
+{
+  "name": "harness-plan",
+  "version": "0.9.0",
+  "private": true,
+  "description": "Harness Gen 3 ASE strategy and plan: a small web app with live editing, shared storage (local files or Netlify Blobs) and read-only HTML exports.",
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "dev": "node --env-file-if-exists=.env --watch server.js",
+    "build:netlify": "node scripts/build-netlify.mjs",
+    "test:netlify": "node scripts/test-netlify.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "11.1.3"
+  }
+}

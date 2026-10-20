@@ -1,0 +1,1990 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Harness Gen 3 ASE Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: masthead with thesis, sticky tab bar, then one working view at a time. Plan data is live (db) with a bundled seed fallback. */
+:root {
+  --bg: #f4f6f8; --surface: #ffffff; --ink: #14202b; --muted: #5a6875; --line: #d9e0e6; --band: #e9eef2;
+  --accent: #0b6e72; --accent-ink: #ffffff; --accent-soft: #d7ecec;
+  --c-h: #0b6e72; --c-a: #b4530a; --c-s: #6a43c9; --c-p: #1d5fc4; --c-g: #a2264f; --c-l: #4d7c0f;
+  --p0: #0b6e72; --p1: #b4530a; --p2: #6a43c9; --p3: #1d5fc4; --p4: #a2264f; --p5: #3d7a1f; --p6: #7a5a12; --p7: #44546a;
+  --ok: #1f7a3a; --warn: #9a6400; --bad: #d01f1f; --leave: #9a6400;
+  --display: 'Archivo', 'Arial Narrow', system-ui, sans-serif;
+  --body: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f161c; --surface: #16212a; --ink: #e4ebf0; --muted: #94a3b0; --line: #2a3843; --band: #1b2832;
+  --accent: #4fc1c4; --accent-ink: #062224; --accent-soft: #163b3e;
+  --c-h: #4fc1c4; --c-a: #f0954a; --c-s: #a98bf2; --c-p: #6fa4f2; --c-g: #ee7aa0; --c-l: #9ccf5a;
+  --p0: #4fc1c4; --p1: #f0954a; --p2: #a98bf2; --p3: #6fa4f2; --p4: #ee7aa0; --p5: #8fd16a; --p6: #e3b04b; --p7: #a9b8c8;
+  --ok: #5cc27a; --warn: #e3b04b; --bad: #ff5c5c; --leave: #e3b04b; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f161c; --surface: #16212a; --ink: #e4ebf0; --muted: #94a3b0; --line: #2a3843; --band: #1b2832;
+  --accent: #4fc1c4; --accent-ink: #062224; --accent-soft: #163b3e;
+  --c-h: #4fc1c4; --c-a: #f0954a; --c-s: #a98bf2; --c-p: #6fa4f2; --c-g: #ee7aa0; --c-l: #9ccf5a;
+  --p0: #4fc1c4; --p1: #f0954a; --p2: #a98bf2; --p3: #6fa4f2; --p4: #ee7aa0; --p5: #8fd16a; --p6: #e3b04b; --p7: #a9b8c8;
+  --ok: #5cc27a; --warn: #e3b04b; --bad: #ff5c5c; --leave: #e3b04b; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body); }
+/* Must win over every display rule below, or hidden pages stay visible and the page links appear to do nothing. */
+[hidden] { display: none !important; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); font-stretch: 85%; text-wrap: balance; margin: 0; line-height: 1.12; }
+p { margin: 0; }
+.eyebrow { font: 600 11.5px/1.2 var(--body); letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.mono { font-family: var(--mono); font-size: 12.5px; }
+.muted { color: var(--muted); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* masthead */
+header.mast { padding-block: 32px 24px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.mast .top { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; justify-content: space-between; }
+.mast h1 { font-size: clamp(32px, 5.6vw, 56px); font-weight: 800; letter-spacing: -.01em; margin-top: 10px; }
+.mast h1 span { color: var(--accent); display: block; font-size: .56em; font-weight: 700; margin-top: 4px; }
+.mast .lede { max-width: 70ch; margin-top: 12px; font-size: 16px; }
+.thesis { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 22px; }
+.thesis div { border-top: 3px solid var(--accent); padding-top: 10px; min-width: 0; }
+.thesis b { display: block; font-family: var(--display); font-stretch: 85%; font-size: 19px; margin-bottom: 4px; }
+.thesis p { color: var(--muted); font-size: 14px; }
+.sync { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; }
+.sync i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.sync.live i { background: var(--ok); }
+
+/* tabs */
+nav.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
+nav.tabs .wrap { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+nav.tabs a { display: block; padding: 14px 12px 11px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; font-weight: 600; color: var(--muted); text-decoration: none; }
+nav.tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+nav.tabs a:hover { color: var(--ink); background: var(--band); }
+/* Without scripts, the targeted section shows and the rest hide. */
+:root:not(.js) section.view:target { display: grid !important; }
+:root:not(.js) main:has(section.view:target) section.view:not(:target) { display: none !important; }
+:root:not(.js) nav.tabs a[aria-current="page"] { border-bottom-color: transparent; color: var(--muted); }
+
+/* version line and history */
+.verline { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; margin-top: 10px; font-size: 13px; color: var(--muted); }
+.verbtn { display: inline-flex; gap: 10px; align-items: baseline; border: 1px solid var(--line); background: var(--bg); border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 13px; color: var(--muted); }
+.verbtn b { color: var(--ink); font-family: var(--mono); font-size: 12.5px; }
+.verbtn:hover { border-color: var(--accent); }
+a.verbtn { text-decoration: none; color: var(--ink); font-weight: 600; }
+.history { margin-top: 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); padding: 14px 16px; display: grid; gap: 10px; max-width: 820px; }
+.histhead { display: flex; justify-content: space-between; align-items: center; }
+.histhead h3 { font-size: 18px; }
+.histlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.histlist li { display: grid; grid-template-columns: 70px 110px minmax(0, 1fr); gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
+.histlist li b { font-family: var(--mono); font-size: 12.5px; }
+.histlist li small { display: block; color: var(--muted); font-size: 12px; }
+.histlist li.cur b::after { content: ' current'; font: 600 10.5px var(--body); color: var(--accent); text-transform: uppercase; letter-spacing: .05em; }
+@media (max-width: 560px) { .histlist li { grid-template-columns: 60px minmax(0, 1fr); } .histlist li .d { display: none; } }
+
+/* photos and person cards */
+.ini { position: relative; overflow: hidden; }
+.ini img.face { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.pcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; align-items: start; }
+.pcard { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; display: grid; min-width: 0; }
+.pcard .phead { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; padding: 16px; border-bottom: 1px solid var(--line); }
+.pcard .big { width: 64px; height: 64px; border-radius: 50%; background: var(--pc, var(--muted)); color: var(--surface); font: 700 22px/64px var(--body); text-align: center; position: relative; overflow: hidden; }
+.pcard .big.none { background: transparent; border: 2px dashed var(--muted); color: var(--muted); line-height: 60px; }
+.pcard .big img.face { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pcard h3 { font-size: 19px; }
+.pcard .role { color: var(--muted); font-size: 13px; }
+.pcard .counts { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.pcard .counts b { color: var(--ink); font-family: var(--mono); }
+.pcard .sect { padding: 10px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 6px; }
+.pcard .sect:last-child { border-bottom: 0; }
+.pcard .sect h4 { margin: 0; font: 600 11px var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.pcard ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; max-height: 260px; overflow-y: auto; }
+.pcard li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: baseline; font-size: 13px; }
+.pcard li .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pcard li .d { font: 500 11.5px var(--mono); color: var(--muted); white-space: nowrap; }
+.pcard li .d.over { color: var(--bad); font-weight: 600; }
+.pcard .tools { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 16px; background: var(--band); border-radius: 0 0 6px 6px; align-items: center; }
+.pcard .tools label.btn { display: inline-block; }
+.pcard .tools input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.pcard.unassigned .phead { background: var(--band); }
+nav.tabs .count { font: 500 11px var(--mono); background: var(--band); border-radius: 999px; padding: 1px 6px; margin-left: 4px; }
+
+main { padding-block: 28px 64px; }
+section.view { display: grid; gap: 22px; }
+.viewhead { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; }
+.viewhead h2 { font-size: 30px; font-weight: 750; }
+.viewhead p { color: var(--muted); max-width: 72ch; margin-top: 6px; }
+.banner { border: 1px solid var(--line); border-left: 4px solid var(--warn); background: var(--surface); border-radius: 6px; padding: 10px 14px; font-size: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+
+/* chips, buttons, forms */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 4px; padding: 7px 14px; font-weight: 600; font-size: 13.5px; cursor: pointer; }
+.btn.ghost { background: var(--surface); color: var(--ink); border-color: var(--line); }
+.btn.danger { background: var(--surface); color: var(--bad); border-color: var(--bad); }
+.btn:disabled { opacity: .5; cursor: default; }
+.x { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 16px; line-height: 1; padding: 4px 6px; border-radius: 3px; }
+.x:hover { color: var(--bad); background: var(--band); }
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; align-items: end; }
+.form label, .ed label { display: grid; gap: 3px; font-size: 12px; font-weight: 600; color: var(--muted); min-width: 0; }
+.form .wide, .ed .wide { grid-column: 1 / -1; }
+input[type=text], input[type=date], input[type=number], select, textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 7px 9px; font-size: 14px; color: var(--ink); font-weight: 400; width: 100%; min-width: 0; }
+textarea { resize: vertical; min-height: 60px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.diamond { width: 9px; height: 9px; transform: rotate(45deg); display: inline-block; background: var(--c-g); flex: none; }
+
+/* people chips */
+.who { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; min-width: 0; }
+.ini { width: 22px; height: 22px; border-radius: 50%; background: var(--pc, var(--muted)); color: var(--surface); font: 700 10px/22px var(--body); text-align: center; flex: none; letter-spacing: .02em; }
+.ini.none { background: transparent; border: 1.5px dashed var(--muted); color: var(--muted); line-height: 19px; }
+.ini.away { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--leave); }
+
+/* roadmap grid */
+.gridscroll { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; }
+.rgrid { display: grid; }
+.rgrid > div { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px; min-width: 0; }
+.rgrid .last { border-right: 0; }
+.rgrid .colh { background: var(--band); }
+.colh b { display: block; font-family: var(--display); font-stretch: 85%; font-size: 17px; }
+.colh .mono { color: var(--muted); }
+.colh.now { box-shadow: inset 0 3px 0 var(--bad); }
+.colh.now b::after { content: ' · now'; color: var(--bad); font-size: 13px; }
+.rowh { display: flex; flex-direction: column; gap: 6px; }
+.rowh b { font-family: var(--display); font-stretch: 85%; font-size: 17px; line-height: 1.15; }
+.rowh .code { font: 600 11px var(--mono); color: var(--accent-ink); background: var(--ic); align-self: start; padding: 2px 6px; border-radius: 3px; }
+.rowh small { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+.cell { display: flex; flex-direction: column; gap: 6px; }
+.act { text-align: left; border: 1px solid var(--line); border-left: 3px solid var(--ic); background: var(--surface); border-radius: 3px; padding: 7px 8px; font-size: 13px; line-height: 1.35; cursor: pointer; display: grid; gap: 6px; width: 100%; }
+.act:hover { background: var(--band); }
+.act.demo { border-color: var(--c-g); border-left-color: var(--ic); }
+.act .row1 { display: flex; gap: 7px; align-items: flex-start; }
+.act .row1 .diamond { margin-top: 4px; }
+.act .row2 { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+.act.done { opacity: .6; }
+.act.dim { opacity: .25; }
+
+/* detail and editor */
+.detail { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 18px 20px; display: grid; gap: 10px; border-top: 4px solid var(--ic, var(--accent)); min-width: 0; }
+.detail h3 { font-size: 21px; }
+.detail .meta { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 13px; align-items: center; }
+.detail .why { max-width: 75ch; }
+.detail.empty { color: var(--muted); border-top-color: var(--line); }
+.detail .sub { font-size: 13px; color: var(--muted); }
+.detail .sub b { color: var(--ink); display: block; margin-bottom: 2px; }
+.ed { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.ed .bar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ed .checkline { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--ink); font-weight: 500; }
+.note { font-size: 12.5px; color: var(--muted); }
+.err { color: var(--bad); font-size: 13px; }
+.statpill { display: inline-block; font: 600 11px var(--body); padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
+.st-done { color: var(--ok); border-color: var(--ok); } .st-in-progress { color: var(--accent); border-color: var(--accent); } .st-blocked { color: var(--bad); border-color: var(--bad); }
+
+/* initiatives */
+.inits { display: grid; gap: 16px; }
+.init { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.init > .ih { display: grid; grid-template-columns: 6px 1fr; }
+.init > .ih .bar { background: var(--ic); }
+.init .ihb { padding: 18px 20px; display: grid; gap: 10px; min-width: 0; }
+.init h3 { font-size: 25px; font-weight: 750; }
+.init .outcome { font-size: 15.5px; max-width: 75ch; }
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 22px; margin: 0; }
+.kv div { min-width: 0; }
+.kv dt { font: 600 11px var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+.kv dd { margin: 0; font-size: 14px; }
+details.acts { border-top: 1px solid var(--line); }
+details.acts summary { cursor: pointer; padding: 12px 20px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+details.acts summary::-webkit-details-marker { display: none; }
+details.acts summary::after { content: '+'; font-family: var(--mono); color: var(--muted); }
+details.acts[open] summary::after { content: '\2212'; }
+.hz { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); border-top: 1px solid var(--line); }
+.hz > div { padding: 14px 20px; border-right: 1px solid var(--line); min-width: 0; }
+.hz h4 { margin: 0 0 8px; font: 600 12px var(--body); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.hz ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.hz li { font-size: 13.5px; line-height: 1.45; display: flex; gap: 8px; }
+.hz li .diamond { margin-top: 6px; }
+.hz li .tick { width: 9px; height: 9px; border: 1.5px solid var(--muted); border-radius: 2px; margin-top: 5px; flex: none; }
+.hz li .when { font: 500 11px var(--mono); color: var(--muted); display: flex; gap: 8px; align-items: center; margin-top: 2px; }
+.callout { background: var(--band); border-radius: 6px; padding: 16px 20px; display: grid; gap: 6px; max-width: 900px; }
+.callout b { font-family: var(--display); font-stretch: 85%; font-size: 18px; }
+
+/* tables */
+.tscroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table.t { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 13.5px; }
+table.t th, table.t td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+table.t th { background: var(--band); font-weight: 600; font-size: 12.5px; }
+table.t tr:last-child td { border-bottom: 0; }
+.stage { display: inline-block; font: 500 11.5px var(--mono); padding: 3px 7px; border-radius: 3px; white-space: nowrap; }
+.s0 { background: var(--accent); color: var(--accent-ink); }
+.s1 { background: var(--accent-soft); color: var(--ink); }
+.s2 { border: 1px solid var(--line); color: var(--ink); }
+.s3 { border: 1px dashed var(--line); color: var(--muted); }
+.prod b { font-family: var(--display); font-stretch: 85%; font-size: 16px; display: block; }
+.prod small { color: var(--muted); display: block; margin-top: 3px; line-height: 1.4; }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); border: 1px solid var(--line); border-radius: 6px; background: var(--surface); overflow: hidden; }
+.steps > div { padding: 14px 16px; border-right: 1px solid var(--line); min-width: 0; display: grid; gap: 4px; align-content: start; }
+.steps .n { font: 500 12px var(--mono); color: var(--accent); }
+.steps b { display: block; font-family: var(--display); font-stretch: 85%; font-size: 17px; }
+.steps p { font-size: 13px; color: var(--muted); }
+.steps ul { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.steps li button { background: none; border: 0; padding: 0; text-align: left; cursor: pointer; font-size: 12.5px; color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted); align-items: center; }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+
+/* estate */
+.fate { display: inline-block; font: 600 11.5px var(--body); padding: 3px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.f-Wrap { color: var(--c-p); } .f-Renovate { color: var(--c-a); } .f-Replace { color: var(--c-s); } .f-Consolidate { color: var(--c-g); } .f-Retire { color: var(--muted); } .f-Retain { color: var(--ok); }
+.ex { font: 600 10.5px var(--body); letter-spacing: .06em; text-transform: uppercase; color: var(--warn); }
+.vocab { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.vocab div { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; display: grid; gap: 5px; min-width: 0; }
+.vocab p { font-size: 13.5px; color: var(--muted); }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 22px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; display: grid; gap: 10px; min-width: 0; align-content: start; }
+.panel h3 { font-size: 19px; }
+.panel ul.plain { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13.5px; }
+
+/* to-do */
+.todos { display: grid; gap: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); overflow: hidden; }
+.todo { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.todo:last-child { border-bottom: 0; }
+.todo input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+.todo .tx { min-width: 0; display: grid; gap: 2px; }
+.todo .tx span { overflow-wrap: anywhere; }
+.todo .tx small { color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.todo.done .tx span { text-decoration: line-through; color: var(--muted); }
+.due { font: 500 12px var(--mono); color: var(--muted); white-space: nowrap; }
+.due.over { color: var(--bad); font-weight: 600; }
+.linkbtn { background: none; border: 0; padding: 0; cursor: pointer; color: var(--accent); font: 500 12px var(--mono); }
+.empty-state { padding: 22px; color: var(--muted); text-align: center; font-size: 14px; }
+
+/* team */
+.people { display: grid; gap: 0; }
+.person { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.person:last-child { border-bottom: 0; }
+.person small { color: var(--muted); display: block; font-size: 12px; }
+.leaveitem { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.leaveitem:last-child { border-bottom: 0; }
+.leaveitem.past { opacity: .5; }
+.tag-now { font: 600 10.5px var(--body); color: var(--leave); border: 1px solid var(--leave); border-radius: 999px; padding: 1px 6px; margin-left: 6px; }
+
+/* gantt */
+.gtools { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; }
+.gtools .grp { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.gtools .lbl { font-size: 12.5px; color: var(--muted); margin-right: 2px; }
+/* The chart scrolls inside its own box both ways, so the sideways scrollbar is always in view and the date
+   headers and labels stay put. Drag the background to pan. */
+.gwrap { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); overflow: auto; max-height: min(78vh, 920px); overscroll-behavior: contain; cursor: grab; }
+.gwrap.panning { cursor: grabbing; user-select: none; }
+.grow.h { position: sticky; z-index: 9; }
+.grow.h .glabel { z-index: 10; }
+.gtodaylbl { position: absolute; top: 4px; transform: translateX(-50%); font: 700 10.5px/1 var(--body); color: #fff; background: var(--bad); padding: 4px 6px; border-radius: 3px; white-space: nowrap; letter-spacing: .03em; z-index: 2; }
+.gbody { position: relative; width: max-content; min-width: 100%; }
+.grow { display: flex; height: 36px; border-bottom: 1px solid var(--line); }
+.grow.h { height: 28px; background: var(--band); }
+.glabel { position: sticky; left: 0; z-index: 8; width: var(--lw); flex: none; background: var(--surface); border-right: 1px solid var(--line); display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 13px; min-width: 0; }
+.glabel .txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
+/* Action descriptions wrap onto a second line before they are cut off. */
+.act-row .glabel .txt { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.25; font-size: 12.5px; }
+/* Drag the right edge of the description column to resize it; double-click to reset. */
+.lwgrip { position: absolute; top: 0; bottom: 0; right: -5px; width: 10px; cursor: col-resize; z-index: 11; touch-action: none; }
+.lwgrip::after { content: ''; position: absolute; top: 4px; bottom: 4px; left: 4px; width: 2px; border-radius: 1px; background: var(--line); }
+.lwgrip:hover::after, .lwgrip.on::after { background: var(--accent); }
+.glabel .id { font: 500 11px var(--mono); color: var(--muted); flex: none; width: 30px; }
+.glabel .ini { width: 20px; height: 20px; line-height: 20px; font-size: 9px; }
+.glabel .ini.none { line-height: 17px; }
+.grow.h .glabel { background: var(--band); font-size: 11.5px; color: var(--muted); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.grow.sum, .grow.sum .glabel { background: var(--band); }
+.grow.sum .glabel { font-weight: 700; font-family: var(--display); font-stretch: 85%; font-size: 15px; }
+.tog { border: 0; background: none; cursor: pointer; padding: 2px 4px; font: 600 13px var(--mono); color: var(--muted); }
+.grow.act-row .glabel { cursor: pointer; }
+.grow.act-row:hover .glabel, .grow.sel .glabel { background: var(--accent-soft); }
+.gtrack { position: relative; flex: none; background-image: repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px var(--wk)); }
+.grow.h .gtrack { background-image: none; }
+.gseg { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--line); padding: 6px 6px 0; font-size: 11.5px; white-space: nowrap; overflow: hidden; color: var(--muted); }
+.gseg.cur { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.gbar { --soft: color-mix(in srgb, var(--ic) 22%, var(--surface)); position: absolute; top: 9px; height: 18px; border-radius: 3px; border: 1.5px solid var(--ic); background: linear-gradient(to right, var(--ic) var(--p), var(--soft) var(--p)); cursor: pointer; padding: 0; z-index: 3; }
+.gbar.done { background: var(--ic); }
+.gbar.blocked { border: 2px dashed var(--bad); }
+.gbar.clash, .gms.clash { box-shadow: 0 0 0 2px var(--bad); }
+.gms { position: absolute; top: 11px; width: 14px; height: 14px; margin-left: -7px; transform: rotate(45deg); background: var(--ic); border: 2px solid var(--surface); cursor: pointer; padding: 0; z-index: 3; }
+.gms.demo { background: var(--c-g); }
+.gbar:focus-visible, .gms:focus-visible { outline: 2px solid var(--ink); }
+.gown { position: absolute; top: 10px; font-size: 11.5px; color: var(--muted); white-space: nowrap; z-index: 3; pointer-events: none; }
+.gsum { position: absolute; top: 15px; height: 6px; border-radius: 3px; background: var(--ic); opacity: .55; }
+.gsdot { position: absolute; top: 13px; width: 9px; height: 9px; margin-left: -4.5px; transform: rotate(45deg); background: var(--c-g); z-index: 3; }
+.gaway { position: absolute; top: 4px; bottom: 4px; z-index: 2; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--leave) 45%, transparent) 0 3px, transparent 3px 7px); border-radius: 2px; pointer-events: none; }
+.gleave { position: absolute; top: 8px; height: 20px; border-radius: 3px; border: 1.5px solid var(--leave); background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--leave) 55%, transparent) 0 4px, transparent 4px 8px); z-index: 3; font-size: 11px; color: var(--ink); padding: 1px 5px; overflow: hidden; white-space: nowrap; }
+.gtoday { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2.5px solid var(--bad); z-index: 7; pointer-events: none; }
+.gtoday span { position: absolute; top: 3px; left: -1px; transform: translateX(-50%); font: 700 10.5px/1 var(--body); color: #fff; background: var(--bad); padding: 4px 6px; border-radius: 3px; white-space: nowrap; letter-spacing: .03em; }
+svg.gdeps { position: absolute; top: 0; pointer-events: none; z-index: 1; overflow: visible; }
+svg.gdeps path { fill: none; stroke: var(--muted); stroke-width: 1.2; opacity: .7; }
+svg.gdeps path.clash { stroke: var(--bad); opacity: 1; stroke-width: 1.6; }
+svg.gdeps marker path { fill: var(--muted); stroke: none; }
+svg.gdeps marker.clash path { fill: var(--bad); }
+.checks .ok { color: var(--ok); font-weight: 600; }
+.checks .bad { color: var(--bad); font-weight: 600; }
+.checks .warn { color: var(--warn); font-weight: 600; }
+.checks ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 13px; }
+
+/* estate management: three parts as a left-to-right flow of action cards */
+.epipe { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px; align-items: start; }
+.epart { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--c-a); border-radius: 6px; min-width: 0; position: relative; }
+.epart:not(:last-child)::after { content: '\2192'; position: absolute; right: -24px; top: 18px; color: var(--c-a); font: 700 20px/1 var(--body); }
+.ephead { padding: 14px 16px 12px; display: grid; gap: 8px; border-bottom: 1px solid var(--line); }
+.ephead .top { display: flex; align-items: center; gap: 10px; }
+.enum { width: 28px; height: 28px; border-radius: 50%; background: var(--c-a); color: var(--surface); font: 700 13px/28px var(--mono); text-align: center; flex: none; }
+.ephead h3 { font-size: 20px; }
+.ephead .cnt { margin-left: auto; font: 500 12px var(--mono); color: var(--muted); white-space: nowrap; }
+.ephead p { font-size: 13.5px; color: var(--muted); }
+.ebar { height: 4px; background: var(--band); border-radius: 2px; overflow: hidden; }
+.ebar i { display: block; height: 100%; background: var(--c-a); }
+.elist { list-style: none; margin: 0; padding: 10px; display: grid; gap: 8px; }
+.ecard { width: 100%; text-align: left; background: var(--bg); border: 1px solid var(--line); border-left: 3px solid var(--ic, var(--c-a)); border-radius: 4px; padding: 9px 11px; display: grid; gap: 6px; cursor: pointer; color: var(--ink); }
+.ecard:hover { border-color: var(--ic, var(--c-a)); background: var(--surface); }
+.ecard.done { opacity: .62; }
+.ecard.overdue { border-color: var(--bad); border-left-color: var(--ic, var(--c-a)); }
+.ecard.sel { box-shadow: 0 0 0 2px var(--accent); }
+.ecard .t1 { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ecard .eid { font: 600 11.5px var(--mono); color: var(--ic, var(--c-a)); }
+.ecard .etx { font-size: 13.5px; line-height: 1.4; }
+.ecard .t3 { display: flex; justify-content: space-between; align-items: center; gap: 8px; font: 500 11.5px var(--mono); color: var(--muted); }
+.eempty { padding: 6px 4px; color: var(--muted); font-size: 13px; }
+.eother { grid-column: 1 / -1; }
+@media (max-width: 900px) { .epipe { grid-template-columns: 1fr; gap: 14px; } .epart:not(:last-child)::after { content: '\2193'; right: auto; left: 50%; top: auto; bottom: -18px; } }
+table.reg tr:hover td { background: var(--band); }
+table.reg td:first-child { min-width: 190px; }
+.typ { font: 500 11.5px var(--mono); padding: 2px 7px; border-radius: 3px; background: var(--band); white-space: nowrap; }
+.fieldgrid { list-style: none; counter-reset: f; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; }
+.fieldgrid li { counter-increment: f; border: 1px solid var(--line); border-radius: 4px; padding: 7px 10px 7px 36px; position: relative; font-size: 13px; background: var(--bg); line-height: 1.4; }
+.fieldgrid li::before { content: counter(f); position: absolute; left: 11px; top: 7px; font: 600 11.5px var(--mono); color: var(--c-a); }
+.panel .vocab { grid-template-columns: 1fr; gap: 8px; }
+.panel .vocab > div { background: var(--bg); border-left: 4px solid var(--fc, var(--line)); padding: 10px 12px; }
+.vocab .vh { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.vocab .vn { font: 500 11.5px var(--mono); color: var(--muted); }
+
+/* initiatives: "Actions by horizon" as side-by-side columns of action cards */
+.hzrow { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, 1fr); overflow-x: auto; border-top: 1px solid var(--line); }
+.hzcol { border-right: 1px solid var(--line); min-width: 0; }
+.hzcol:last-child { border-right: 0; }
+.hzcol h4 { margin: 0; padding: 12px 12px 2px; display: flex; align-items: center; gap: 8px; font: 600 12px var(--body); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.hzcol h4 .cnt { margin-left: auto; font: 600 11px var(--mono); background: var(--band); color: var(--ink); border-radius: 999px; padding: 1px 8px; letter-spacing: 0; }
+.hzcol .hzr { display: block; padding: 0 12px; font: 500 11px var(--mono); color: var(--muted); }
+.hzcol.now h4 { color: var(--ink); }
+.hzcol.now h4::after { content: 'now'; font: 600 10px var(--body); color: var(--bad); letter-spacing: .05em; order: 1; }
+.hzcol.now h4 .cnt { order: 2; margin-left: auto; }
+.hzcol.earlier { background: var(--band); }
+.hznone { padding: 16px 20px; color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--line); }
+.idet { margin: 0 14px 14px; }
+
+/* milestones: status pills, the per-initiative track, and the next-milestone line */
+.mst { display: inline-block; font: 600 10.5px var(--body); padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; letter-spacing: .02em; }
+.mst.ok { color: var(--ok); } .mst.risk { color: var(--warn); } .mst.late { color: var(--bad); } .mst.done { color: var(--muted); }
+.msbox { border-top: 1px solid var(--line); padding: 12px 20px 14px; display: grid; gap: 10px; }
+.msbox .mshead { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; font-size: 13.5px; }
+.msbox .mshead .eyebrow { margin-right: 4px; }
+.msbox .mswhy { font-size: 12.5px; color: var(--warn); }
+.msbox .mswhy.late { color: var(--bad); }
+/* The track scrolls sideways, which also clips anything outside it, so it is padded enough for the rotated
+   diamonds and the "next" ring to show in full. */
+.mstrack { list-style: none; margin: 0; padding: 10px 10px 6px 10px; display: flex; overflow-x: auto; }
+.mstrack li { flex: 0 0 220px; position: relative; padding: 31px 16px 2px 0; min-width: 0; }
+.mstrack li::before { content: ''; position: absolute; top: 9px; left: 0; right: 0; height: 2px; background: var(--line); }
+.mstrack li:first-child::before { left: 7px; }
+.mstrack li:last-child::before { right: auto; width: 0; }
+.mstrack .md { position: absolute; top: 3px; left: 0; width: 14px; height: 14px; transform: rotate(45deg); background: var(--surface); border: 2px solid var(--muted); z-index: 1; }
+.mstrack .done .md { background: var(--muted); border-color: var(--muted); }
+.mstrack .ok .md { border-color: var(--ok); }
+.mstrack .risk .md { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 30%, var(--surface)); }
+.mstrack .late .md { border-color: var(--bad); background: var(--bad); }
+.mstrack .next .md { width: 18px; height: 18px; top: 1px; left: -2px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--ic, var(--accent)) 35%, transparent); }
+.mstrack button { all: unset; cursor: pointer; display: grid; gap: 3px; width: 100%; box-sizing: border-box; border-radius: 3px; }
+.mstrack button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mstrack button:hover .mtitle { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.mstrack .mdate { font: 500 11.5px var(--mono); color: var(--muted); }
+.mstrack .mtitle { font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
+.mstrack .done .mtitle { color: var(--muted); }
+.mstrack .next .mtitle { font-weight: 600; }
+.mstrack .nexttag { font: 700 10px var(--body); letter-spacing: .06em; color: var(--ic, var(--accent)); }
+.nextms { display: grid; gap: 3px; font-size: 12.5px; line-height: 1.35; border-top: 1px dashed var(--line); padding-top: 6px; }
+.nextms .eyebrow { font-size: 10.5px; }
+
+/* Grid children may shrink, so wide inner rows (milestone tracks, horizon columns) scroll inside themselves
+   instead of widening the whole page. */
+section.view > *, .inits > *, #workers > * { min-width: 0; }
+
+/* Notices above a page (read-only copy, live data unavailable, edit mode on) keep clear of the page heading. */
+main > .banner, main > .edithint { margin-bottom: 24px; }
+main > .banner { padding: 12px 16px; line-height: 1.5; }
+
+/* backup and restore (version history panel) */
+.backup { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 8px; }
+.backup a.btn { text-decoration: none; display: inline-block; }
+.backup label.btn { position: relative; display: inline-block; }
+.restorewarn { border: 1px solid var(--bad); border-left-width: 4px; border-radius: 6px; padding: 10px 12px; display: grid; gap: 8px; font-size: 13.5px; background: var(--surface); }
+.restorewarn .ok { color: var(--ok); font-weight: 600; }
+
+/* initiative links */
+.lnkbox { display: grid; gap: 6px; justify-items: start; }
+.lnks { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.lnks li { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; background: var(--bg); font-size: 13px; max-width: 100%; min-width: 0; }
+.lnks li:has(button) { padding-right: 3px; }
+.lnks a { color: var(--ink); font-weight: 600; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lnks a::after { content: ' \2197'; color: var(--muted); font-weight: 400; }
+.lnks a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.lnks .lhost { font: 500 11px var(--mono); color: var(--muted); white-space: nowrap; }
+.lnks li.lnkedit { border: 0; padding: 0; background: none; width: 100%; display: block; }
+.lnkform { border-radius: 6px; border: 1px solid var(--line); width: 100%; box-sizing: border-box; }
+
+/* synthetic workers page */
+.wdef { background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--c-s); border-radius: 6px; padding: 20px 24px; display: grid; gap: 10px; }
+.wdef > b { font-family: var(--display); font-stretch: 85%; font-size: 24px; line-height: 1.15; }
+.wdef > p { font-size: 16px; line-height: 1.6; max-width: 75ch; }
+.wtraits { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+.wtraits li { background: var(--bg); border: 1px solid var(--line); border-top: 3px solid var(--c-s); border-radius: 4px; padding: 10px 12px; display: grid; gap: 3px; }
+.wtraits b { font-size: 14px; }
+.wtraits span { font-size: 13px; color: var(--muted); line-height: 1.4; }
+.winit .acthead { padding: 12px 20px 0; border-top: 1px solid var(--line); font: 600 12px var(--body); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+
+/* overdue and earlier work */
+.gbar.overdue, .gms.overdue { outline: 2px solid var(--bad); outline-offset: 2px; }
+.gown.over { color: var(--bad); font-weight: 600; }
+.grow.overdue .glabel .id { color: var(--bad); font-weight: 600; }
+.odp { font: 600 10.5px var(--body); color: var(--bad); border: 1px solid var(--bad); border-radius: 999px; padding: 1px 6px; white-space: nowrap; }
+.act.overdue { border-color: var(--bad); border-left-color: var(--ic); }
+.colh.earlier, .cell.earlier { background: var(--band); }
+.colh.earlier b { color: var(--muted); }
+
+/* edit mode */
+.modebtn { margin-left: auto; align-self: center; flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; gap: 7px; align-items: center; white-space: nowrap; }
+.modebtn i { width: 26px; height: 14px; border-radius: 999px; background: var(--line); position: relative; flex: none; }
+.modebtn i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: var(--surface); transition: left .15s; }
+.modebtn[aria-pressed="true"] { border-color: var(--warn); color: var(--warn); }
+.modebtn[aria-pressed="true"] i { background: var(--warn); }
+.modebtn[aria-pressed="true"] i::after { left: 14px; }
+.edithint { border: 1px dashed var(--warn); color: var(--ink); background: var(--surface); border-radius: 6px; padding: 9px 14px; font-size: 13.5px; }
+body.editing .gbar, body.editing .gms, body.editing .gleave { cursor: grab; touch-action: none; }
+body.editing .gbar::before, body.editing .gbar::after { content: ''; position: absolute; top: 2px; bottom: 2px; width: 4px; border-radius: 2px; background: var(--surface); opacity: .9; cursor: ew-resize; }
+body.editing .gbar::before { left: 1px; } body.editing .gbar::after { right: 1px; }
+body.editing .act { border-style: dashed; border-left-style: solid; }
+.gleave { font: inherit; font-size: 11px; text-align: left; cursor: default; }
+.dragging { cursor: grabbing !important; opacity: .9; box-shadow: 0 3px 10px rgba(0,0,0,.3); z-index: 6 !important; }
+.dragtip { position: fixed; z-index: 60; background: var(--ink); color: var(--bg); font: 600 12px var(--mono); padding: 4px 8px; border-radius: 3px; pointer-events: none; white-space: nowrap; }
+.inl { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; align-items: end; padding: 10px 14px; background: var(--band); border-bottom: 1px solid var(--line); }
+.inl label { display: grid; gap: 3px; font-size: 12px; font-weight: 600; color: var(--muted); min-width: 0; }
+.inl .wide { grid-column: 1 / -1; }
+.inl .bar { display: flex; gap: 8px; flex-wrap: wrap; }
+.pen { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 13px; padding: 4px 6px; border-radius: 3px; }
+.pen:hover { color: var(--accent); background: var(--band); }
+.rowbtns { display: inline-flex; gap: 2px; align-items: center; }
+
+/* questions */
+ol.qs { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; counter-reset: q; max-width: 900px; }
+ol.qs li { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 18px 14px 56px; position: relative; counter-increment: q; }
+ol.qs li::before { content: 'Q' counter(q); position: absolute; left: 16px; top: 14px; font: 600 13px var(--mono); color: var(--accent); }
+ol.qs b { display: block; margin-bottom: 4px; }
+ol.qs p { color: var(--muted); font-size: 14px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 4px; font-size: 13.5px; z-index: 50; max-width: calc(100% - 32px); }
+footer { color: var(--muted); font-size: 12.5px; padding-block: 0 40px; }
+@media (max-width: 640px) { .hz > div, .steps > div { border-right: 0; border-bottom: 1px solid var(--line); } .todo { grid-template-columns: 26px minmax(0, 1fr) auto; } .todo .who { display: none; } }
+@media (prefers-reduced-motion: no-preference) { .act, .chip { transition: background .15s, opacity .15s; } }
+</style>
+
+<header class="mast">
+  <div class="wrap">
+    <div class="top"><span class="eyebrow">ICS.ai · Strategy and plan · Draft for internal review</span><span class="sync" id="sync"><i></i><span>Loading plan…</span></span></div>
+    <div class="verline" id="verline"><button type="button" class="verbtn" id="verBtn" aria-expanded="false" aria-controls="history"><b>Version 0.9</b><span>Last updated 20 Oct 2026 by Lee Englestone</span></button><a class="verbtn" id="exportBtn" href="/api/export" download hidden title="One self-contained HTML file of the whole plan, with no editing. Opens on its own.">Download read-only copy</a><span class="lastedit" id="lastEdit"></span><form method="post" action="/logout" id="signOutForm" hidden style="margin-left:auto"><button type="submit" class="verbtn" title="Sign out of the plan on this browser">Sign out<span id="signedInAs"></span></button></form></div>
+    <h1>The Harness Gen 3 ASE <span>Strategy and plan: from aspiration to implementation, from prototype to production</span></h1>
+    <p class="lede">The Harness is the platform we deploy into a council's own cloud to host, connect and grow the apps and synthetic workers that run their services. This plan sets out six initiatives, who owns each piece of work, and a working demonstration every fortnight from this week onwards.</p>
+    <div class="thesis">
+      <div><b>Show it working early</b><p>Every initiative has a demo in the next two weeks. A rough version working on screen beats a polished slide.</p></div>
+      <div><b>Industrialise what we showed</b><p>Prototypes become repeatable patterns, with a register, a contract and a definition of done.</p></div>
+      <div><b>One golden journey</b><p>Building compliance certificate validation runs through every initiative, so each step adds a link to one visible chain.</p></div>
+    </div>
+    <div class="history" id="history" hidden>
+      <div class="histhead"><h3>Version history</h3><button type="button" class="x" id="histClose" aria-label="Close version history">×</button></div>
+      <ol class="histlist" id="histList"></ol>
+      <p class="note" id="exportNow" hidden>Recording a version saves a read-only HTML copy of the plan that anyone can open without the app. <a href="/api/export" download>Download a read-only copy of the plan as it stands now</a>.</p>
+      <div class="backup" id="backupBox" hidden>
+        <span class="eyebrow">Backup and restore</span>
+        <p class="note">A backup is one file holding the whole plan: every initiative, action, person, to-do, leave entry, link, version and photo. Use it to keep a safe copy, or to move the plan between your computer and the hosted site.</p>
+        <div class="chips"><a class="btn ghost" href="/api/backup" download>Download backup</a>
+          <span id="restoreArea" hidden><label class="btn ghost" for="restoreFile" style="cursor:pointer">Restore from a backup…<input type="file" id="restoreFile" accept="application/json,.json" style="position:absolute;width:1px;height:1px;opacity:0"></label></span></div>
+        <div id="restoreConfirm" hidden class="restorewarn"></div>
+      </div>
+      <form class="inl" id="verForm" hidden>
+        <span class="eyebrow wide">Record a new version</span>
+        <label>Version<input type="text" id="vf-version" required maxlength="12"></label>
+        <label>Date<input type="date" id="vf-date" required></label>
+        <label>Updated by<input type="text" id="vf-by" required maxlength="80"></label>
+        <label class="wide">What changed<textarea id="vf-notes" required maxlength="600"></textarea></label>
+        <div class="bar"><button class="btn" type="submit">Record version</button></div>
+      </form>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Pages"><div class="wrap">
+  <a href="#v-roadmap" data-view="roadmap" aria-current="page">Roadmap</a>
+  <a href="#v-gantt" data-view="gantt">Gantt</a>
+  <a href="#v-todo" data-view="todo">To-do <span class="count" id="todoCount">0</span></a>
+  <a href="#v-team" data-view="team">Team and leave</a>
+  <a href="#v-inits" data-view="inits">Initiatives</a>
+  <a href="#v-workers" data-view="workers">Synthetic Workers</a>
+  <a href="#v-estate" data-view="estate">Estate Management</a>
+  <a href="#v-smart" data-view="smart">SMART into the Harness</a>
+  <a href="#v-questions" data-view="questions">Open questions</a>
+  <button type="button" class="modebtn" id="modeBtn" aria-pressed="false" hidden><i></i><span>Read-only</span></button>
+</div></nav>
+<div class="wrap"><div class="banner" id="nojs" style="margin-top:16px">This view is not running the page’s scripts, so the plan, Gantt, to-dos and editing cannot load. Open the plan app, or the published Claude link, in a normal browser. The links above still switch pages.</div></div>
+<script>
+// Page switching. The nav items are real links (#v-gantt and so on), so they work even where scripts do not run:
+// CSS shows the targeted section. When this script runs it takes over, without jumping the scroll position.
+(function () {
+  var VIEWS = ['roadmap', 'gantt', 'todo', 'team', 'inits', 'workers', 'estate', 'smart', 'questions'];
+  document.documentElement.classList.add('js');
+  var nj = document.getElementById('nojs'); if (nj) nj.parentNode.remove();
+  function norm(v) { v = String(v || '').replace(/^#/, '').replace(/^v-/, ''); return VIEWS.indexOf(v) >= 0 ? v : null; }
+  function show(view, push) {
+    view = norm(view) || 'roadmap';
+    document.querySelectorAll('nav.tabs [data-view]').forEach(function (a) { if (a.dataset.view === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    document.querySelectorAll('section.view').forEach(function (s) { s.hidden = s.id !== 'v-' + view; });
+    try { localStorage.setItem('harness-tab', view); } catch (e) {}
+    if (push) { try { history.replaceState(null, '', '#v-' + view); } catch (e) {} }
+    document.dispatchEvent(new CustomEvent('viewchange', { detail: view }));
+  }
+  window.showView = function (v) { show(v, true); };
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('nav.tabs [data-view]');
+    if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    e.preventDefault(); show(a.dataset.view, true);
+  });
+  window.addEventListener('hashchange', function () { var v = norm(location.hash); if (v) show(v); });
+  function init() { var saved = null; try { saved = localStorage.getItem('harness-tab'); } catch (e) {} show(norm(location.hash) || norm(saved)); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+
+<main class="wrap">
+  <div class="banner" id="banner" hidden></div>
+  <div class="edithint" id="editHint" hidden><b>Edit mode is on.</b> On the Gantt, drag a bar to move it, or drag either end to change its start or end date. Click any action, initiative, to-do, person or leave entry to edit it. With a bar selected, arrow keys move it a day at a time, and Shift with an arrow changes its end date. Changes save for everyone straight away.</div>
+
+  <section class="view" id="v-roadmap">
+    <div class="viewhead">
+      <div><h2>Roadmap</h2><p>Initiatives run down the side and time runs across. Each card shows its owner. Select a card to see why it matters, or to change its owner, dates or status.</p></div>
+      <div class="chips" id="rfilter"></div>
+    </div>
+    <div class="legend"><span><i class="diamond"></i> Milestone</span><span><i class="ini none">?</i> No owner yet</span><span><button type="button" class="chip" id="demoOnly" aria-pressed="false"><i class="diamond"></i> Show milestones only</button></span><span><button type="button" class="chip" id="hideDone" aria-pressed="false">Hide finished work</button></span><span><i class="odp">Overdue</i> Past its end date and not done</span><span style="margin-left:auto"><button type="button" class="btn" id="addAction2" hidden>Add action</button></span></div>
+    <div class="gridscroll"><div class="rgrid" id="rgrid"></div></div>
+    <div class="detail empty" id="detail">Select an action in the grid to see its detail.</div>
+  </section>
+
+  <section class="view" id="v-gantt" hidden>
+    <div class="viewhead">
+      <div><h2>Gantt</h2><p>Drawn from the live plan, so it redraws as soon as anyone changes a date, owner or status. The red line is today. Hatched amber shows an owner on leave. Anything that starts before what it depends on is outlined in red.</p></div>
+      <button type="button" class="btn" id="addAction" hidden>Add action</button>
+    </div>
+    <div class="gtools">
+      <div class="grp" id="gfilter"></div>
+      <div class="grp">
+        <span class="lbl">Move</span>
+        <button type="button" class="chip" id="gprev" title="Scroll back four weeks">‹ Earlier</button>
+        <button type="button" class="chip" id="gtodayBtn" title="Scroll to today">Today</button>
+        <button type="button" class="chip" id="gnext" title="Scroll forward four weeks">Later ›</button>
+        <span class="lbl" style="margin-left:8px">Zoom</span>
+        <button type="button" class="chip" data-z="week" aria-pressed="false">Weeks</button>
+        <button type="button" class="chip" data-z="month" aria-pressed="false">Months</button>
+        <button type="button" class="chip" data-z="fit" aria-pressed="false">Fit</button>
+        <span class="lbl" style="margin-left:8px">Show</span>
+        <button type="button" class="chip" id="gdeps" aria-pressed="true">Dependencies</button>
+        <button type="button" class="chip" id="gdemo" aria-pressed="false"><i class="diamond"></i> Milestones only</button>
+        <button type="button" class="chip" id="ghideDone" aria-pressed="false">Hide finished work</button>
+        <button type="button" class="chip" id="gleave" aria-pressed="true">Team leave</button>
+        <button type="button" class="chip" id="gcollapse" aria-pressed="false">Collapse all</button>
+      </div>
+    </div>
+    <div class="gtools"><div class="grp"><span class="lbl">Owner</span><select id="gowner" style="width:auto"></select></div></div>
+    <div class="gwrap" id="gwrap"><div class="gbody" id="gbody"></div></div>
+    <div class="legend"><span><i style="width:0;height:14px;border-left:2.5px solid var(--bad);display:inline-block"></i> Today</span><span><i class="diamond"></i> Milestone</span><span><i style="width:22px;height:10px;border:1.5px solid var(--muted);border-radius:2px;display:inline-block"></i> Action (fill shows progress)</span><span><i style="width:22px;height:10px;background:repeating-linear-gradient(135deg,var(--leave) 0 3px,transparent 3px 7px);display:inline-block"></i> On leave</span><span><i style="width:16px;height:10px;border:2px dashed var(--bad);display:inline-block;border-radius:2px"></i> Blocked</span></div>
+    <div class="two">
+      <div class="detail empty" id="gdetail">Select a bar or row to see its detail.</div>
+      <div class="panel checks" id="gchecks"></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-todo" hidden>
+    <div class="viewhead"><div><h2>To-do</h2><p>Small jobs that keep the plan moving. Each one has an owner and can link to an action on the roadmap. Shared with everyone who can open this page.</p></div></div>
+    <form class="form panel" id="todoForm" hidden>
+      <label class="wide">What needs doing<input type="text" id="td-text" required maxlength="300" placeholder="e.g. Book the room for the V1 showcase"></label>
+      <label>Owner<select id="td-owner"></select></label>
+      <label>Due<input type="date" id="td-due"></label>
+      <label>Links to action<select id="td-action"></select></label>
+      <div><button class="btn" type="submit">Add to-do</button></div>
+    </form>
+    <div class="chips" id="todoFilters"></div>
+    <div class="todos" id="todoList"></div>
+  </section>
+
+  <section class="view" id="v-team" hidden>
+    <div class="viewhead"><div><h2>Team and leave</h2><p>Each card shows one person, everything they own and when they are away, with overdue work in red. Leave shows on the Gantt, and the schedule checks flag any action whose owner is away while it runs. In edit mode you can add people, upload headshots and record leave.</p></div></div>
+    <div class="pcards" id="pcards"></div>
+    <div class="two">
+      <div class="panel">
+        <h3>People</h3>
+        <div class="people" id="peopleList"></div>
+        <form class="form" id="personForm" hidden>
+          <label>Name<input type="text" id="pf-name" required maxlength="80"></label>
+          <label>Role<input type="text" id="pf-role" maxlength="80" placeholder="e.g. Harness engineering lead"></label>
+          <div><button class="btn" type="submit">Add person</button></div>
+        </form>
+      </div>
+      <div class="panel">
+        <h3>Leave and holidays</h3>
+        <div id="leaveList"></div>
+        <form class="form" id="leaveForm" hidden>
+          <label>Person<select id="lf-person" required></select></label>
+          <label>From<input type="date" id="lf-start" required></label>
+          <label>To<input type="date" id="lf-end" required></label>
+          <label class="wide">Note (optional)<input type="text" id="lf-note" maxlength="80" placeholder="e.g. Half term"></label>
+          <div><button class="btn" type="submit">Add leave</button></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="v-inits" hidden>
+    <div class="viewhead"><div><h2>Initiatives</h2><p>Each initiative has an outcome, an owner, a first demo and a test for when it is done. Open the actions to see the work, grouped by when it lands.</p></div>
+      <div class="chips"><button type="button" class="chip" id="expandAll" aria-pressed="false">Open all actions</button><button type="button" class="btn" id="addInit" hidden>Add initiative</button></div></div>
+    <div class="inits" id="inits"></div>
+  </section>
+
+  <section class="view" id="v-workers" hidden>
+    <div class="viewhead"><div><h2>Synthetic Workers</h2><p>What we mean by a synthetic worker, and the plan for bringing synthetic workers into council services through the Harness.</p></div></div>
+    <div class="wdef">
+      <span class="eyebrow">Definition</span>
+      <b>What we mean by a synthetic worker</b>
+      <p>A synthetic worker is an AI agent set up like a role in the team. It has a job description, uses only the systems the Harness has wrapped for it, makes only the decisions it has been delegated, and hands every decision that matters to a named officer to confirm. It is measured the way the service measures its staff.</p>
+      <ul class="wtraits">
+        <li><b>A job description</b><span>A defined role, set up like a member of the team.</span></li>
+        <li><b>Wrapped systems only</b><span>Works only through systems the Harness has wrapped for it.</span></li>
+        <li><b>Delegated decisions</b><span>Makes only the decisions it has been delegated.</span></li>
+        <li><b>A named officer confirms</b><span>Every decision that matters goes to a named officer.</span></li>
+        <li><b>Measured like staff</b><span>Measured the way the service measures its staff.</span></li>
+      </ul>
+    </div>
+    <div id="workers"></div>
+  </section>
+
+  <section class="view" id="v-estate" hidden>
+    <div class="viewhead"><div><h2>Estate Management</h2><p>Estate Management covers everything we need to know and do about a council's apps. We discover what they use, record it in the App Register, decide what happens to each app, and then wrap or rebuild it through the Harness. The SME engine writes into the register, and the Harness prints from it.</p></div></div>
+    <div class="epipe" id="estateSteps"></div>
+    <div class="detail empty" id="edetail">Select an action above to see its detail.</div>
+    <div class="viewhead" style="margin-top:8px"><div><h3 style="font-size:22px">App Register</h3><p>The single list of every app on a council's journeys. The rows below are examples taken from the building compliance reference run, to show the shape.</p></div><div class="chips" id="ffilter"></div></div>
+    <div class="tscroll"><table class="t reg" id="reg"></table></div>
+    <div class="two">
+      <div class="panel"><h3>Proposed fields for Register v1</h3><ol class="fieldgrid" id="fieldlist"></ol></div>
+      <div class="panel"><h3>What can happen to each app</h3><div class="vocab" id="vocab"></div></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-smart" hidden>
+    <div class="viewhead"><div><h2>Bringing SMART into Harness engineering</h2><p>All four SMART products follow the same six stages, so each one becomes deployable, measurable and supportable through the Harness rather than through its own route. Each cell is the month we aim to reach that stage, agreed with the product's lead and set in edit mode.</p></div></div>
+    <div class="steps" id="steps"></div>
+    <div class="tscroll"><table class="t" id="matrix"></table></div>
+    <p class="note" id="smartNote"></p>
+  </section>
+
+  <section class="view" id="v-questions" hidden>
+    <div class="viewhead"><div><h2>Open questions</h2><p>Assumptions made in this draft that need a decision before the plan is shared more widely.</p></div></div>
+    <ol class="qs" id="qs"></ol>
+  </section>
+</main>
+<footer class="wrap">Draft plan. Owners and dates are proposals until confirmed. The reference journey, app actions and AI assistant names come from the SME engine run of 18 Oct 2026 (building compliance certificate validation).</footer>
+<div class="toast" id="toast" hidden role="status"></div>
+<div class="dragtip" id="dragtip" hidden></div>
+
+<script>
+// SEED: the bundled plan. The page shows it when live data is unavailable. Live edits are stored in the
+// artifact's shared database (collections: actions, inits, people, leave, todos) and take priority.
+window.SEED = {
+  // The roadmap columns roll with today's date (Earlier / This week / Next 2 weeks / Rest of quarter / Later),
+  // so they are worked out in the page, not stored here.
+  initiatives: [
+    { id: 'H', name: 'SMART Harness V1 → V1.1', tag: 'SMART Harness', color: '--c-h',
+      short: 'Show V1, learn what breaks, ship V1.1 around Deploy, Manage and Enhance.',
+      outcome: 'A Harness that we can deploy into a customer tenant on repeat, run with confidence, and extend without rework.',
+      firstDemo: 'V1 internal showcase this week.',
+      exit: 'V1.1 running in a customer tenant with a named service owner, deployed by script and upgraded once without downtime.' },
+    { id: 'A', name: 'Estate Management: discovery, App Register and wrapping', tag: 'Estate Management', color: '--c-a',
+      short: 'Discover each council’s apps, record them in the App Register, and wrap or rebuild them to a repeatable pattern.',
+      outcome: 'We can discover a council’s estate quickly, hold it in one register that the SME engine and the Harness both use, and wrap any system in days to a standard contract.',
+      firstDemo: 'Wrap a second, different app live, inside two weeks.',
+      exit: '10 wrappers in the catalogue, at least 3 reused across councils, and one council’s full estate discovered and in the register.' },
+    { id: 'S', name: 'Synthetic Workers', tag: 'Synthetic Workers', color: '--c-s',
+      short: 'Move from "agents for everything" to role-based synthetic workers with a job description and a human confirmer.',
+      outcome: 'Councils can see, govern and measure each synthetic worker like a member of staff: a defined role, the tools it may use, what it may decide and who signs off.',
+      firstDemo: 'One worker checking sample certificates through a wrapped app, with an officer confirming.',
+      exit: 'A shadow run at a council reports measured results, and the service owner decides whether to rely on the worker.' },
+    { id: 'P', name: 'SMART products into Harness engineering', tag: 'SMART products', color: '--c-p',
+      short: 'Front Door AI, Workforce AI, Transformation AI and Harness AI all built, tested and shipped through one Harness route.',
+      outcome: 'Each SMART product is registered, packaged, evaluated, deployed and operated through the Harness, so a council gets one platform and we keep one release train.',
+      firstDemo: 'Transformation AI output (app actions and specification) printed by the Harness.',
+      exit: 'All four products on the same release train, deployed into a customer tenant by the Harness.' },
+    { id: 'G', name: 'Golden journey demonstrator', tag: 'Golden journey', color: '--c-g',
+      short: 'Building compliance certificate validation, shown end to end and growing every fortnight.',
+      outcome: 'One council journey shown end to end: scoped by Transformation AI, apps printed and wrapped by the Harness, run by synthetic workers, entered through Front Door AI.',
+      firstDemo: 'CEO run story shown beside Harness V1 this week, as the "what comes next".',
+      exit: 'A council runs the journey in shadow with real certificates.' },
+    { id: 'L', name: 'SMART LGR Workbench', tag: 'LGR Workbench', color: '--c-l',
+      short: 'Finish the SMART LGR Workbench: complete development, train its users and test its performance.',
+      outcome: 'The SMART LGR Workbench complete, performance-tested and with trained users, ready for councils going through local government reorganisation.',
+      firstDemo: 'To confirm.',
+      exit: 'Development complete, performance tests passed and training delivered.' },
+  ],
+  actions: [
+    { id: 'H1', init: 'H', start: '2026-10-23', demo: true, t: 'Run the V1 internal showcase and record every question, failure and workaround in one feedback log', why: 'The showcase is our cheapest test. Writing things down live stops "it worked on my machine" from hiding real gaps.' },
+    { id: 'H2', init: 'H', start: '2026-10-23', end: '2026-10-28', deps: ['H1'], t: 'Triage the log into Broken, Missing and Confusing, each with a severity and an owner', why: 'Gives V1.1 an evidence-based scope instead of a wish list.' },
+    { id: 'H3', init: 'H', start: '2026-10-21', end: '2026-10-22', t: 'Tag V1 as a baseline build and environment', why: 'Lets us show measurable progress from V1 to V1.1 and roll back if needed.' },
+    { id: 'H4', init: 'H', start: '2026-10-28', end: '2026-10-31', deps: ['H2'], t: 'Agree V1.1 scope under three headings: Deploy, Manage, Enhance. Anything else waits for V1.2', why: 'Keeps V1.1 small enough to ship before Christmas.' },
+    { id: 'H5', init: 'H', start: '2026-10-29', end: '2026-11-06', demo: true, deps: ['H2'], t: 'Fix the top showcase blockers and re-demo to the same audience', why: 'Shows the feedback loop works and builds internal confidence quickly.' },
+    { id: 'H6', init: 'H', start: '2026-10-27', end: '2026-11-07', t: 'Write the Harness definition of done: what any app, wrapper or worker needs before the Harness will host it', why: 'This is the gate every SMART product and every wrapper passes through. Without it, industrialisation has no standard.' },
+    { id: 'H7', init: 'H', start: '2026-11-09', end: '2026-12-04', deps: ['H4'], t: 'Deploy: scripted, repeatable deployment into a customer Azure tenant (UK South, with UK West for recovery) that honours the landing zone policies', why: 'Councils will not accept hand-built environments. A script is also our sales proof that we can stand it up in days.' },
+    { id: 'H8', init: 'H', start: '2026-11-16', end: '2026-12-11', deps: ['H4'], t: 'Manage: one operations view per deployed app covering health, logs, cost, users and version, plus a support runbook', why: 'Customers buy a service, not a build. Support teams need this before the first live customer.' },
+    { id: 'H9', init: 'H', start: '2026-11-23', end: '2026-12-11', deps: ['H4'], t: 'Enhance: version the catalogue templates and give printed apps a safe upgrade path', why: 'Without it, every printed app becomes a one-off we have to maintain by hand.' },
+    { id: 'H10', init: 'H', start: '2026-12-17', demo: true, deps: ['H7', 'H8', 'H9'], t: 'Release V1.1 and demo it to a friendly council', why: 'First external proof. Their reaction shapes Q1.' },
+    { id: 'H11', init: 'H', start: '2027-01-11', end: '2027-03-12', deps: ['H10'], t: 'First customer tenant running V1.1 in production, with a named service owner', why: 'Moves the Harness from demo to reference site.' },
+    { id: 'H12', init: 'H', start: '2027-02-01', end: '2027-03-31', deps: ['H9'], t: 'Customer staff request a new app from the catalogue themselves', why: 'Self-service is what makes the Harness an ever-growing offering rather than a project.' },
+
+    { id: 'A1', init: 'A', stream: 'act', start: '2026-10-20', end: '2026-10-24', t: 'Write up the wrapping prototype honestly: what was wrapped, how, and what was mocked for the demo', why: 'We need a clear starting line before we can talk about limits or timescales.' },
+    { id: 'A2', init: 'A', stream: 'register', start: '2026-10-21', end: '2026-10-24', t: 'Start the App Register as a shared table, seeded with the prototype app and the six apps from the building compliance run', why: 'The register is the backbone of Estate Management. Starting it this week, even as a simple table, makes every later step concrete.' },
+    { id: 'A12', init: 'A', stream: 'discover', start: '2026-10-27', end: '2026-11-07', t: 'Define the discovery method: journey walk-throughs, workshop templates, and import from asset lists, contract registers and SME engine runs', why: 'Discovery feeds the register. A repeatable method means every council’s estate is captured the same way.' },
+    { id: 'A3', init: 'A', stream: 'act', start: '2026-10-27', end: '2026-11-07', deps: ['A1'], t: 'Test the limits: try the wrapper approach on 8–10 representative council apps and record pass, partial or fail for each', why: 'Covers API-only, UI-only, legacy forms, SSO and MFA, on-premises and vendor SaaS. It tells us where wrapping works and where we need Renovate or Replace instead.' },
+    { id: 'A4', init: 'A', stream: 'act', start: '2026-10-27', end: '2026-11-14', t: 'Check licence and contract terms: are we allowed to wrap each vendor’s system, and on what terms?', why: 'A commercial blocker found late is far more expensive than one found now.' },
+    { id: 'A5', init: 'A', stream: 'act', start: '2026-11-06', demo: true, deps: ['A1'], t: 'Wrap a second, different app live in a session', why: 'Proves the prototype was not a one-off.' },
+    { id: 'A6', init: 'A', stream: 'act', start: '2026-11-10', end: '2026-11-21', deps: ['A3'], t: 'Publish the wrapper contract: standard read and write interface, outbox, idempotency keys, "outcome unknown" on timeouts, audit trail', why: 'These are the failure modes the reference run raised. A shared contract makes every wrapper behave the same way for workers and apps.' },
+    { id: 'A8', init: 'A', stream: 'register', start: '2026-11-10', end: '2026-11-27', deps: ['A2'], t: 'Release App Register v1: one owner per entry, an action (Wrap, Renovate, Replace…), wrapper status and linked journeys', why: 'The SME engine writes app actions into it, and the Harness prints from it.' },
+    { id: 'A9', init: 'A', stream: 'act', start: '2026-11-16', end: '2026-12-11', t: 'Security pack: DPIA screening template, pen test of a wrapper, data residency statement', why: 'Information governance questions will come first in every council conversation.' },
+    { id: 'A13', init: 'A', stream: 'discover', start: '2026-11-23', end: '2026-12-11', deps: ['A12'], t: 'Run discovery with one council and capture its estate in the register', why: 'Tests the method on real data and gives that council a picture of its own estate.' },
+    { id: 'A7', init: 'A', stream: 'act', start: '2026-11-24', end: '2026-12-18', deps: ['A6'], t: 'Build the wrapper factory: template repo, test kit and generated docs, with wrapping time measured in days', why: 'This is the step from craft to industrial. It is also where Harness AI can generate first drafts.' },
+    { id: 'A10', init: 'A', stream: 'act', start: '2027-01-05', end: '2027-03-26', deps: ['A7'], t: '10 wrappers in the catalogue, reused where councils share the same vendor system', why: 'Reuse is where the economics come from: wrap a common system once and sell it many times.' },
+    { id: 'A11', init: 'A', stream: 'register', start: '2027-01-18', end: '2027-02-26', deps: ['A8', 'A13'], t: 'Import one council’s full app estate into the register and agree an action for every app', why: 'Shows the register at real scale and gives that council a roadmap of its own.' },
+
+    { id: 'S1', init: 'S', start: '2026-10-20', end: '2026-10-24', t: 'Agree a one-paragraph definition of a synthetic worker and use it in every deck and conversation from now on', why: 'The change from "agents" only lands if everyone says the same thing.' },
+    { id: 'S2', init: 'S', start: '2026-10-27', end: '2026-11-04', deps: ['S1'], t: 'Write the worker specification ("job description"): role, remit, tools it may use (wrapped apps only), decisions it may make, named human confirmer, measures', why: 'Makes workers governable and easy to explain to a council.' },
+    { id: 'S3', init: 'S', start: '2026-10-27', end: '2026-10-30', t: 'Choose the first three workers from the golden journey: intake and extraction, certificate checking, outcome and reporting', why: 'They map to the Document extraction assistant, Checking and calculation assistant and Smart Notes named in the reference run.' },
+    { id: 'S4', init: 'S', start: '2026-11-07', demo: true, deps: ['S2', 'S3', 'A5'], t: 'Demo one worker processing sample certificates through a wrapped app, with an officer confirming each decision', why: 'Shows wrapping and workers together, which is the story councils need to see.' },
+    { id: 'S5', init: 'S', start: '2026-11-10', end: '2026-11-27', t: 'Define the evaluation and shadow-run method: run beside officers and measure clean share, review minutes and error rate before anyone relies on the worker', why: 'The reference business case keeps a 40% benefits haircut until a shadow run reports. This is how we remove it.' },
+    { id: 'S7', init: 'S', start: '2026-11-10', end: '2026-11-20', t: 'Guardrail: a synthetic worker can never be the named confirmer of a decision', why: 'The reference run’s challenger flagged decisions naming synthetic personas as confirmers. We should design this out.' },
+    { id: 'S6', init: 'S', start: '2026-11-30', end: '2026-12-04', deps: ['A8'], t: 'Add workers to the App Register as their own entry type, with owner and delegation', why: 'One register for apps and workers means one picture of the estate.' },
+    { id: 'S8', init: 'S', start: '2027-01-11', end: '2027-03-05', deps: ['S5'], t: 'First council shadow run reports, followed by a decision to rely', why: 'This turns the benefits in the business case from estimates into measurements.' },
+    { id: 'S9', init: 'S', start: '2027-02-01', end: '2027-03-31', t: 'Worker catalogue with at least five reusable worker templates', why: 'Repeatable workers are what make the offering grow with each council.' },
+
+    { id: 'P1', init: 'P', start: '2026-10-20', end: '2026-10-24', t: 'List each product’s repo, hosting, owner and current deployment route', why: 'We cannot plan the move without knowing where each product starts from.' },
+    { id: 'P2', init: 'P', start: '2026-10-27', end: '2026-10-31', deps: ['P1'], t: 'Agree the six Harness engineering stages and the entry test for each', why: 'Gives each product team a clear checklist instead of a vague instruction to "join the Harness".' },
+    { id: 'P3', init: 'P', start: '2026-10-27', end: '2026-10-29', t: 'Name an engineering lead for each product who owns its route into the Harness', why: 'Ownership is the most common reason platform moves stall.' },
+    { id: 'P4', init: 'P', start: '2026-10-27', end: '2026-11-05', t: 'Define the hand-off from Transformation AI to the Harness: app actions, specifications and PRD go into a print queue', why: 'Connects the CEO’s SME engine story directly to the Harness.' },
+    { id: 'P5', init: 'P', start: '2026-11-07', demo: true, deps: ['P4'], t: 'Demo: an app specified by Transformation AI printed by the Harness from a catalogue template', why: 'Shows the two halves of the offering working together.' },
+    { id: 'P6', init: 'P', start: '2026-11-10', end: '2026-12-11', deps: ['P2'], t: 'Package Front Door AI so the Harness deploys it, and have it create cases in Harness apps through wrappers', why: 'Front Door becomes the resident and contractor entry point to every journey we build.' },
+    { id: 'P7', init: 'P', start: '2026-11-10', end: '2026-12-04', deps: ['S2'], t: 'Expose Workforce AI assistants as tools that synthetic workers can use', why: 'Reuses what already exists instead of building new worker capabilities.' },
+    { id: 'P8', init: 'P', start: '2026-11-16', end: '2026-12-18', t: 'Shared evaluation suite: test sets, scoring and release gates used by all four products', why: 'One quality bar across the family, and evidence for every council’s assurance team.' },
+    { id: 'P9', init: 'P', start: '2027-01-11', end: '2027-03-31', deps: ['P6', 'P7', 'P8'], t: 'All four products on one release train with combined release notes', why: 'One platform story, one support model, one upgrade path.' },
+    { id: 'P10', init: 'P', start: '2026-11-16', end: '2026-12-18', t: 'Front Door AI: plan the SMART Customer Services Unified AI Workdesk through the Harness, with one record per contact and each service app wrapped for its slice', why: 'The Workdesk is where customer services work happens. Service apps stay with their owners and are wrapped, not reprinted.' },
+    { id: 'P11', init: 'P', start: '2026-11-16', end: '2026-12-18', t: 'Workforce AI: plan the SMART Staff AI Workdesk through the Harness, first extending v1 through Harness cycles, then reprinting it as v2', why: 'The Staff AI Workdesk is where staff meet the roster of 304 synthetic workers. Its staged plan depends on the Harness.' },
+    { id: 'P12', init: 'P', start: '2027-01-11', end: '2027-02-05', deps: ['P10'], t: 'Priority service: Council Tax (app blueprint CT1)', why: 'One of the five priority services with an app blueprint in the Gen 3 pack.' },
+    { id: 'P13', init: 'P', start: '2027-01-25', end: '2027-02-19', deps: ['P10'], t: 'Priority service: Blue Badge (app blueprint BF4)', why: 'One of the five priority services with an app blueprint in the Gen 3 pack.' },
+    { id: 'P14', init: 'P', start: '2027-02-08', end: '2027-03-05', deps: ['P10'], t: 'Priority service: Registrations (app blueprint RC1)', why: 'One of the five priority services with an app blueprint in the Gen 3 pack.' },
+    { id: 'P15', init: 'P', start: '2027-02-22', end: '2027-03-19', deps: ['P10'], t: 'Priority service: Household Waste (app blueprint WR1)', why: 'One of the five priority services with an app blueprint in the Gen 3 pack.' },
+    { id: 'P16', init: 'P', start: '2027-03-08', end: '2027-03-31', deps: ['P10'], t: 'Priority service: Fly-tipping (app blueprint SS2)', why: 'One of the five priority services with an app blueprint in the Gen 3 pack.' },
+
+    { id: 'G1', init: 'G', start: '2026-10-23', demo: true, t: 'Show the SME engine run story beside Harness V1 at the showcase, as the destination', why: 'Connects the CEO’s framing to what engineering is building today.' },
+    { id: 'G2', init: 'G', start: '2026-11-07', demo: true, deps: ['P4'], t: 'Print the renovated Building compliance tracker from a catalogue template', why: 'The first link: from specification to a running app.' },
+    { id: 'G3', init: 'G', start: '2026-11-27', demo: true, deps: ['A6', 'S4'], t: 'Wrap the Compliance and safety system and have a synthetic worker check a certificate, with an officer confirming', why: 'The second link: real systems and workers in the chain.' },
+    { id: 'G4', init: 'G', start: '2026-12-14', demo: true, deps: ['G3', 'P6'], t: 'Contractor submits a certificate through Front Door AI and it flows through to the record', why: 'The full chain, shown to a council.' },
+    { id: 'G5', init: 'G', start: '2027-01-18', end: '2027-03-12', deps: ['G4'], t: 'Shadow run with a council using real certificates', why: 'Turns the demonstrator into evidence.' },
+
+    { id: 'L1', init: 'L', start: '2026-10-26', end: '2026-12-11', t: 'Complete development of the SMART LGR Workbench', why: 'Finishes the build so the Workbench can be tested and handed to users.' },
+    { id: 'L2', init: 'L', start: '2027-01-11', end: '2027-02-05', deps: ['L1'], t: 'Training for SMART LGR Workbench users', why: 'People need to be confident using the Workbench before councils rely on it.' },
+    { id: 'L3', init: 'L', start: '2026-12-14', end: '2027-01-15', deps: ['L1'], t: 'Performance testing of the SMART LGR Workbench', why: 'Shows the Workbench copes with real volumes before it goes live.' },
+  ],
+  estate: [
+    { id: 'discover', name: 'Discover', text: 'Find every app on a council’s journeys: walk-throughs, workshops, asset lists, contract registers and SME engine runs.' },
+    { id: 'register', name: 'Register', text: 'Record each app once in the App Register, with an owner, its journeys, its data and its contract.' },
+    { id: 'act', name: 'Decide and wrap', text: 'Agree an action for each app. Wrap the systems that stay the record; renovate, replace or consolidate the rest through the Harness.' },
+  ],
+  stages: [
+    ['Register', 'Listed in the register with owner, purpose, data held and dependencies.'],
+    ['Contract', 'Uses Harness interfaces: wrappers for systems, standard events, identity.'],
+    ['Package', 'Builds as a container plus infrastructure code that the Harness deploys.'],
+    ['Evaluate', 'Passes the shared evaluation suite and release gates.'],
+    ['Deploy', 'Deployed into a customer tenant by the Harness, not by hand.'],
+    ['Operate', 'Visible in the Manage view: health, cost, usage, version.'],
+  ],
+  products: [
+    { name: 'SMART Front Door AI', role: 'Resident and contractor entry point, with the SMART Customer Services Unified AI Workdesk. Priority services: Council Tax, Blue Badge, Registrations, Household Waste, Fly-tipping.', first: 'Create a case in a Harness app through a wrapper' },
+    { name: 'SMART Workforce AI', role: 'The SMART Staff AI Workdesk, plus staff-side assistants (Smart Notes, document extraction, checking and calculation) that become the toolset for synthetic workers.', first: 'Expose one assistant as a worker tool' },
+    { name: 'SMART Transformation AI', role: 'The SME engine. Scopes a journey, builds the business case and writes the specification the Harness prints.', first: 'Send app actions and specifications to the print queue' },
+    { name: 'SMART Harness AI', role: 'The AI inside the Harness. Prints apps from templates, drafts wrappers and supports operations.', first: 'Draft a wrapper from the wrapper contract' },
+  ],
+  register: [
+    { app: 'Building compliance tracker', type: 'Spreadsheet', dept: 'Property and assets', fate: 'Renovate', status: 'Template chosen', step: 'Step 3: certificates checked against each building', ai: 'Smart Notes' },
+    { app: 'Compliance certificates log', type: 'Spreadsheet', dept: 'Property and assets', fate: 'Renovate', status: 'Under review', step: 'Step 2: certificates logged by hand', ai: '—' },
+    { app: 'Compliance and safety system', type: 'Procured', dept: 'Housing and homelessness', fate: 'Wrap', status: 'Wrapper to specify', step: 'Step 4: certificate judged valid or invalid', ai: 'Checking and calculation assistant' },
+    { app: 'SharePoint and OneDrive', type: 'Procured', dept: 'Corporate and shared', fate: 'Wrap', status: 'Wrapper to specify', step: 'Step 1: certificates received and logged', ai: 'Document extraction assistant' },
+    { app: 'Reporting and dashboards', type: 'Procured', dept: 'Corporate and shared', fate: 'Wrap', status: 'Not started', step: 'Step 5: outcome recorded, reports updated', ai: 'Smart Notes' },
+    { app: 'Compliance contractor portals', type: 'External service', dept: 'Property and assets', fate: 'Wrap', status: 'Licence check needed', step: 'Step 6: certificates collected from portals', ai: '—' },
+  ],
+  fates: [
+    ['Wrap', 'A bought or external system stays the record. The Harness prints a wrapper around it so journeys can read and write through it.'],
+    ['Renovate', 'A council spreadsheet or home-made tool rebuilt as a Harness app from a catalogue template.'],
+    ['Replace', 'A bought system, or a new need, met by a Harness app from a catalogue template.'],
+    ['Consolidate', 'Several council tools merged into one Harness app.'],
+    ['Retire', 'No longer used on this journey. Its work and records move into another app.'],
+    ['Retain', 'A platform system kept as it is.'],
+  ],
+  fields: ['App name, supplier and version', 'Type: procured, spreadsheet, external service, platform', 'Owning service and named owner', 'How it was discovered, and when', 'Journeys and steps it appears on', 'Action: Wrap, Renovate, Replace, Consolidate, Retire, Retain', 'Integration route: API, UI, file, none', 'Wrapper or template ID, and status', 'Data held, personal data, DPIA reference', 'Contract end date and buying route', 'Councils using the same system (for reuse)', 'Synthetic workers that use it'],
+  // Version history. The live list (collection: versions) takes priority once it has entries.
+  versions: [
+    { version: '0.1', date: '2026-10-20', by: 'Lee Englestone', notes: 'First roadmap: five initiatives with actions by horizon, App Register, SMART pipeline and open questions.' },
+    { version: '0.2', date: '2026-10-20', by: 'Lee Englestone', notes: 'Data-driven Gantt with dependencies, demo milestones and schedule checks.' },
+    { version: '0.3', date: '2026-10-20', by: 'Lee Englestone', notes: 'Retitled to Harness Gen 3 ASE. Live shared data: owners, to-do list, team and leave. App Register folded into Estate Management.' },
+    { version: '0.4', date: '2026-10-20', by: 'Lee Englestone', notes: 'Read-only and edit modes. Drag bars to reschedule; every action, initiative, to-do, person and leave entry editable in place.' },
+    { version: '0.5', date: '2026-10-20', by: 'Lee Englestone', notes: 'Version history and last-change stamp. Headshots and per-person cards showing everything each person owns. Page links work even where scripts do not run.' },
+    { version: '0.6', date: '2026-10-20', by: 'Lee Englestone', notes: 'Moved to a deployable web app (runs locally or on Azure) with shared persistence and live updates. Each recorded version saves a read-only HTML copy. Tagline adds "from prototype to production".' },
+    { version: '0.7', date: '2026-10-20', by: 'Lee Englestone', notes: 'New SMART LGR Workbench initiative; the two Workdesks and five priority services added. Roadmap columns roll with the date, with overdue flags and a hide-finished filter. Milestones (renamed from demo milestones) with a per-initiative track and on-track status. Add, reorder and link initiatives. New Synthetic Workers page. Gantt scrolls and resizes; Estate Management and initiative actions restyled. Exports show their UK time. Illustrative SMART target dates removed.' },
+    { version: '0.8', date: '2026-10-20', by: 'Lee Englestone', notes: 'The app now sits behind a password with cookie sign-in, ready for a public address: sign-in page, 14-day sessions, sign out, lockout after repeated wrong passwords, and the name given at sign-in shown on changes. Notices above each page now have proper spacing.' },
+    { version: '0.9', date: '2026-10-20', by: 'Lee Englestone', notes: 'Storage reworked so the same app runs locally and on Netlify: plan items, photos and exports are kept as files locally and in Netlify Blobs when deployed, each item as its own record so simultaneous edits are never lost. Open browsers check for changes every 15 seconds. Backup and restore added to move the plan between machines. Existing data moved across automatically.' },
+  ],
+  questions: [
+    ['Synthetic workers: the brief was cut off at "agents that will…"', 'I have assumed they are agents defined like staff roles: a remit, permitted tools, a named human confirmer, and measures. Please complete the sentence so the definition matches yours.'],
+    ['Are my readings of the four SMART products right?', 'Front Door AI as the resident and contractor entry point; Workforce AI as staff assistants that become worker tools; Transformation AI as the CEO’s SME engine; Harness AI as the AI inside the Harness that prints and wraps.'],
+    ['Should Transformation AI (the SME engine) get its own initiative?', 'Right now it sits inside "SMART products into Harness engineering" and the golden journey. If the CEO wants it as a headline, it can become a sixth initiative.'],
+    ['Is building compliance the right golden journey?', 'I chose it because the CEO’s run already covers it in depth. Another journey with a friendlier council might demo better.'],
+    ['What does ASE stand for in "Gen 3 ASE"?', 'The title uses the abbreviation as given. If it should be spelled out for readers outside the core team, say what it stands for.'],
+    ['Who is on the team?', 'Add people on the Team and leave tab, then assign owners to initiatives and actions. The Gantt and schedule checks show gaps until every action has an owner.'],
+    ['Commercial route', 'The reference run notes G-Cloud 14 lots expire on 28 October 2026. Should the buying route for the Harness, wrappers and workers be an action in this plan?'],
+  ],
+};
+</script>
+
+<script>
+(() => {
+  const S = window.SEED;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  const DAY = 864e5;
+  const D = s => { if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return NaN; const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+  const iso = t => new Date(t).toISOString().slice(0, 10);
+  const fmt = (t, o = { day: 'numeric', month: 'short' }) => new Date(t).toLocaleDateString('en-GB', { ...o, timeZone: 'UTC' });
+  const fmtR = (a, b) => a === b ? fmt(a) : new Date(a).getUTCMonth() === new Date(b).getUTCMonth() && new Date(a).getUTCFullYear() === new Date(b).getUTCFullYear() ? `${new Date(a).getUTCDate()}–${fmt(b)}` : `${fmt(a)} – ${fmt(b)}`;
+  const now = new Date(), TODAY = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const STAT = { planned: 'Planned', 'in-progress': 'In progress', done: 'Done', blocked: 'Blocked' };
+  const toast = msg => { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 2600); };
+
+  /* ---------- state ---------- */
+  const live = { actions: null, inits: null, people: null, leave: null, todos: null, versions: null, meta: null };
+  let db = null, canWrite = false, view = 'roadmap';
+  let editMode = false, drag = null, suppressClick = false, pendingRender = false;
+  let inlineEdit = null;   // { section, kind, id } while an inline form is open
+  const ed = () => canWrite && editMode && !!db;
+  let M = null;   // derived model
+
+  // Rolling columns, worked out from today: Earlier / This week / Next 2 weeks / Rest of quarter / Later.
+  const W0 = TODAY - ((new Date(TODAY).getUTCDay() + 6) % 7) * DAY;            // Monday of this week
+  const N1 = W0 + 20 * DAY;                                                       // Sunday of next-but-one week
+  const QEND = (() => { const d = new Date(TODAY); return Date.UTC(d.getUTCFullYear(), Math.floor(d.getUTCMonth() / 3) * 3 + 3, 1) - DAY; })();
+  const H = [
+    { id: 'earlier', label: 'Earlier', s: -Infinity, e: W0 - DAY, range: `Before ${fmt(W0)}` },
+    { id: 'now', label: 'This week', s: W0, e: W0 + 6 * DAY },
+    { id: 'next', label: 'Next 2 weeks', s: W0 + 7 * DAY, e: N1 },
+    { id: 'quarter', label: 'Rest of quarter', s: N1 + DAY, e: QEND },
+    { id: 'later', label: 'Later', s: Math.max(N1, QEND) + DAY, e: Infinity, range: `From ${fmt(Math.max(N1, QEND) + DAY, { day: 'numeric', month: 'short', year: 'numeric' })}` },
+  ].filter(h => h.s <= h.e);                                                      // "Rest of quarter" drops out when the quarter ends within two weeks
+  H.forEach(h => { if (!h.range) h.range = fmtR(h.s, h.e); });
+  const HL = Object.fromEntries(H.map(h => [h.id, h.label]));
+  // Unfinished work that started before this week and is still running counts as this week's.
+  const horizonOf = (s, e) => s < W0 ? (e >= W0 ? 'now' : 'earlier') : (H.find(h => s >= h.s && s <= h.e) || H[H.length - 1]).id;
+  let hideDone = store.get('harness-hidedone') === '1';
+  const shown = a => !(hideDone && a.status === 'done');
+  const INITS = S.initiatives.map(i => ({ ...i, col: `var(${i.color})` }));
+  const IBY = Object.fromEntries(INITS.map(i => [i.id, i]));
+  const INIT_FIELDS = ['name', 'tag', 'short', 'outcome', 'firstDemo', 'exit'];
+  // Colours an added initiative can take (CSS tokens defined for light and dark themes).
+  const COLOURS = [['--c-h', 'Teal'], ['--c-a', 'Orange'], ['--c-s', 'Purple'], ['--c-p', 'Blue'], ['--c-g', 'Raspberry'], ['--c-l', 'Green'], ['--p5', 'Leaf'], ['--p6', 'Ochre'], ['--p7', 'Slate']];
+
+  function build() {
+    const usingLive = !!(live.actions && live.actions.length);
+    const src = usingLive ? live.actions : S.actions;
+    const people = (live.people || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const PBY = Object.fromEntries(people.map((p, n) => [p.id, { ...p, n }]));
+    const leave = (live.leave || []).map(l => ({ ...l, s: D(l.start), e: D(l.end) })).filter(l => !isNaN(l.s) && !isNaN(l.e)).sort((a, b) => a.s - b.s);
+    const initOwner = Object.fromEntries((live.inits || []).map(d => [d.id, d.owner || '']));
+    const initLive = Object.fromEntries((live.inits || []).map(d => [d.id, d]));
+    // Initiatives added in edit mode are docs in "inits" with custom: true; built-in ones come from SEED.
+    const customDocs = (live.inits || []).filter(d => d.custom && /^[A-Z]{1,3}$/.test(d.id) && !S.initiatives.some(s => s.id === d.id))
+      .sort((a, b) => String(a.created || '').localeCompare(String(b.created || '')));
+    for (let k = INITS.length - 1; k >= 0; k--) {
+      if (INITS[k].custom && !customDocs.some(d => d.id === INITS[k].id)) { delete IBY[INITS[k].id]; INITS.splice(k, 1); }
+    }
+    customDocs.forEach((d, n) => {
+      let i = IBY[d.id];
+      if (!i) { i = { id: d.id, custom: true }; INITS.push(i); IBY[d.id] = i; }
+      i.color = COLOURS.some(c => c[0] === d.color) ? d.color : '--p7'; i.col = `var(${i.color})`;
+      i.created = d.created || ''; i.customRank = n;
+      INIT_FIELDS.forEach(k => { i[k] = typeof d[k] === 'string' ? d[k] : ''; });
+      if (!i.name) i.name = 'Untitled initiative';
+      if (!i.tag) i.tag = i.name.slice(0, 30);
+    });
+    INITS.forEach(i => {
+      if (i.custom) return;
+      Object.assign(i, S.initiatives.find(s => s.id === i.id));
+      const d = initLive[i.id];
+      if (d) INIT_FIELDS.forEach(k => { if (typeof d[k] === 'string' && d[k].trim()) i[k] = d[k]; });
+    });
+    // Initiative order: meta/initOrder { order: [ids] }, set in edit mode. Ids it does not list keep their seed order
+    // after the listed ones, and added initiatives follow in the order they were created.
+    const orderDoc = (live.meta || []).find(d => d.id === 'initOrder');
+    const order = orderDoc && Array.isArray(orderDoc.order) ? orderDoc.order : [];
+    const rank = i => { const k = order.indexOf(i.id); if (k >= 0) return k; return i.custom ? 2000 + i.customRank : 1000 + S.initiatives.findIndex(s => s.id === i.id); };
+    INITS.sort((a, b) => rank(a) - rank(b));
+    const acts = src.filter(a => IBY[a.init]).map(a => {
+      const s = D(a.start), e = D(a.end || a.start);
+      const x = { ...a, deps: a.deps || [], status: a.status || 'planned', s, e: isNaN(e) || e < s ? s : e };
+      x.ms = x.s === x.e; x.p = x.status === 'done' ? 100 : Math.max(0, Math.min(100, +a.progress || 0));
+      x.h = horizonOf(x.s, x.e); x.initObj = IBY[a.init];
+      x.overdue = x.status !== 'done' && x.e < TODAY;
+      x.ownerP = PBY[x.owner] || null;
+      x.away = x.ownerP ? leave.filter(l => l.person === x.owner && l.s <= x.e && l.e >= x.s) : [];
+      return x;
+    }).filter(a => !isNaN(a.s));
+    const BY = Object.fromEntries(acts.map(a => [a.id, a]));
+    const issues = [];
+    acts.forEach(a => a.deps.forEach(d => {
+      const p = BY[d];
+      if (!p) issues.push({ kind: 'bad', id: a.id, msg: `${a.id} depends on ${d}, which is not in the plan` });
+      else if (a.s < p.e) { a.clash = true; issues.push({ kind: 'bad', id: a.id, msg: `${a.id} starts ${fmt(a.s)}, before ${p.id} finishes on ${fmt(p.e)}` }); }
+    }));
+    acts.filter(a => a.away.length && a.status !== 'done').forEach(a => a.away.forEach(l =>
+      issues.push({ kind: 'warn', id: a.id, msg: `${a.id}: ${a.ownerP.name} is on leave ${fmtR(Math.max(l.s, a.s), Math.min(l.e, a.e))} while it runs` })));
+    const todos = (live.todos || []).slice();
+    // Milestone status: done / overdue / at risk / on track. "At risk" looks up the whole dependency chain for work that
+    // is overdue, blocked or due to finish after the milestone, and at the milestone itself (blocked, owner on leave).
+    acts.filter(a => a.demo).forEach(m => {
+      if (m.status === 'done') { m.mstate = 'done'; m.mwhy = []; return; }
+      if (m.e < TODAY) { m.mstate = 'late'; m.mwhy = [`was due ${fmt(m.e)}`]; return; }
+      const why = [], seen = new Set(), stack = [...m.deps];
+      while (stack.length) {
+        const id = stack.pop(); if (seen.has(id)) continue; seen.add(id);
+        const p = BY[id]; if (!p) continue;
+        if (p.status !== 'done') {
+          if (p.status === 'blocked') why.push(`${p.id} is blocked`);
+          else if (p.overdue) why.push(`${p.id} is overdue`);
+          else if (p.e > m.s) why.push(`${p.id} finishes ${fmt(p.e)}, after this milestone`);
+        }
+        stack.push(...p.deps);
+      }
+      if (m.status === 'blocked') why.unshift('it is blocked');
+      if (m.away.length) why.push(`${m.ownerP.name} is on leave`);
+      m.mstate = why.length ? 'risk' : 'ok'; m.mwhy = why;
+    });
+    // Initiative links: one doc per initiative, meta/links-<id> { links: [{ id, name, url }] }. Only http(s) links are kept.
+    const links = {};
+    (live.meta || []).filter(d => /^links-[A-Z]{1,3}$/.test(d.id)).forEach(d => {
+      links[d.id.slice(6)] = (Array.isArray(d.links) ? d.links : []).filter(l => l && typeof l.name === 'string' && safeUrl(l.url));
+    });
+    M = { usingLive, people, PBY, leave, initOwner, acts, BY, issues, todos, links };
+  }
+
+  /* ---------- people helpers ---------- */
+  const initials = n => (n || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const pcol = p => `var(--p${p.n % 8})`;
+  const onLeaveNow = pid => M.leave.some(l => l.person === pid && l.s <= TODAY && l.e >= TODAY);
+  // A headshot is an uploaded asset whose id is stored on the person; if it fails to load, the initials underneath show.
+  // In an exported snapshot photos are embedded in the file, and window.HARNESS_BLOB_URL returns them.
+  const blobSrc = id => window.HARNESS_BLOB_URL ? window.HARNESS_BLOB_URL(id) : '/_blob/' + id;
+  const face = p => p && typeof p.photo === 'string' && /^[0-9a-f]{32}$/i.test(p.photo) && blobSrc(p.photo) ? `<img class="face" src="${esc(blobSrc(p.photo))}" alt="" loading="lazy">` : '';
+  document.addEventListener('error', e => { if (e.target && e.target.classList && e.target.classList.contains('face')) e.target.remove(); }, true);
+  function chip(pid, withName = true, size = '') {
+    const p = M.PBY[pid];
+    if (!p) return `<span class="who"><i class="ini none ${size}" title="No owner yet">?</i>${withName ? '<span class="muted">No owner</span>' : ''}</span>`;
+    const away = onLeaveNow(pid);
+    return `<span class="who" title="${esc(p.name)}${p.role ? ' · ' + esc(p.role) : ''}${away ? ' · on leave today' : ''}"><i class="ini ${away ? 'away' : ''} ${size}" style="--pc:${pcol(p)}">${esc(initials(p.name))}${face(p)}</i>${withName ? `<span>${esc(p.name)}</span>` : ''}</span>`;
+  }
+  const ownerOptions = (sel, blank = 'No owner yet') => `<option value="">${esc(blank)}</option>` + M.people.map(p => `<option value="${esc(p.id)}" ${p.id === sel ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+  const when = a => a.ms ? fmt(a.s, { weekday: 'short', day: 'numeric', month: 'short' }) : fmtR(a.s, a.e);
+
+  /* ---------- writes ---------- */
+  async function write(fn, ok) {
+    if (!db || !canWrite) { toast('This view is read-only.'); return false; }
+    try { await fn(); if (ok) toast(ok); noteEdit(); return true; }
+    catch (e) {
+      if (e && e.code === 'invalid_argument' && /permission|level|write/i.test(e.message || '')) { canWrite = false; renderAll(); toast('You can view this plan but not change it.'); }
+      else if (e && e.code === 'quota_exceeded') toast('The plan’s storage is full. Delete old to-dos or leave entries, then try again.');
+      else toast('That change was not saved. Try again in a moment.');
+      return false;
+    }
+  }
+  // Every saved change stamps meta/lastEdit with the time and the editor's id (never their name), one write at a time.
+  let myId = null, userCap = null, assetsCap = null, editChain = Promise.resolve();
+  function noteEdit() {
+    if (!db) return;
+    const body = { at: new Date().toISOString(), by: myId || '' };
+    editChain = editChain.then(() => db.doc('meta/lastEdit').set(body)).catch(() => {});
+  }
+  const actionDoc = a => { const o = { init: a.init, t: a.t, why: a.why || '', start: a.start, end: a.end || a.start, demo: !!a.demo, status: a.status || 'planned', progress: +a.progress || 0, owner: a.owner || '', deps: a.deps || [] }; if (a.stream) o.stream = a.stream; return o; };
+  async function seedLive() {
+    const btn = $('#seedBtn'); if (btn) { btn.disabled = true; btn.textContent = 'Copying…'; }
+    for (const a of S.actions) { const ok = await write(() => db.doc('actions/' + a.id).set(actionDoc(a))); if (!ok) return; }
+    toast('Plan copied into live data. Everyone now sees the same plan.');
+  }
+
+  /* ---------- sync banner ---------- */
+  function renderSync() {
+    const el = $('#sync');
+    const snap = window.SNAPSHOT;
+    // Export time in UK time, whatever the reader's own time zone (older exports carry only exportedAt).
+    const snapAt = snap ? (snap.exportedAtLabel || (isNaN(new Date(snap.exportedAt)) ? '' : new Date(snap.exportedAt).toLocaleString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) + ' UK time')) : '';
+    if (snap) { el.className = 'sync'; el.lastChild.textContent = `Read-only snapshot${snap.version ? ' · version ' + snap.version : ''}${snapAt ? ' · exported ' + snapAt : ''}`; }
+    else if (!db) { el.className = 'sync'; el.lastChild.textContent = 'Bundled plan · read-only'; }
+    else { el.className = 'sync live'; el.lastChild.textContent = canWrite ? 'Live · changes save for everyone' : 'Live · view only'; }
+    const b = $('#banner');
+    if (snap) {
+      const at = new Date(snap.exportedAt);
+      b.hidden = false; b.innerHTML = `<span>This is a read-only copy of the plan${snap.version ? ` at version <b>${esc(snap.version)}</b>` : ''}, exported on <b>${esc(snapAt || 'an unknown date')}</b>${snap.exportedBy ? ' by ' + esc(snap.exportedBy) : ''}. Changes made after that are not included.</span>`;
+    } else if (db && canWrite && live.actions && !live.actions.length) {
+      b.hidden = false; b.innerHTML = `<span>The live plan is empty, so you are seeing the bundled draft. Copy it into live data to start editing owners, dates and status.</span><button class="btn" type="button" id="seedBtn">Copy plan into live data</button>`;
+      $('#seedBtn').onclick = seedLive;
+    } else if (!db) {
+      b.hidden = false; b.innerHTML = `<span>Live data is not available in this view, so you are seeing the bundled draft. Open the plan app (or the published Claude link) to see owners, to-dos and leave.</span>`;
+    } else b.hidden = true;
+    $$('#todoForm, #personForm, #leaveForm').forEach(f => f.hidden = !ed());
+    $('#addAction').hidden = $('#addAction2').hidden = !(ed() && M.usingLive);
+    $('#addInit').hidden = !(ed() && M.usingLive);
+    const mb = $('#modeBtn');
+    mb.hidden = !(db && canWrite);
+    mb.setAttribute('aria-pressed', String(ed()));
+    mb.lastChild.textContent = ed() ? 'Edit mode' : 'Read-only';
+    mb.title = ed() ? 'Switch back to read-only' : 'Switch on edit mode to change dates, owners and details';
+    $('#editHint').hidden = !ed();
+    document.body.classList.toggle('editing', ed());
+  }
+  $('#modeBtn').onclick = () => { editMode = !editMode; inlineEdit = null; editing = null; renderAll(); toast(editMode ? 'Edit mode on. Changes save for everyone.' : 'Back to read-only.'); };
+  $('#addAction2').onclick = () => openEditor(null, $('#detail'));
+
+  /* ---------- detail / editor ---------- */
+  let editing = null;   // { el, id } while a form is open
+  let lastDetail = {};  // el id -> action id
+  function showDetail(id, el) {
+    const a = M.BY[id]; if (!a) { el.className = 'detail empty'; el.textContent = 'That action is no longer in the plan.'; return; }
+    lastDetail[el.id] = id; if (editing && editing.el === el) editing = null;
+    const deps = a.deps.map(d => M.BY[d] ? `<b>${esc(d)}</b> ${esc(M.BY[d].t)} <span class="mono">(${when(M.BY[d])})</span>` : `<b>${esc(d)}</b> (not in the plan)`);
+    const next = M.acts.filter(x => x.deps.includes(a.id)).map(d => `<b>${esc(d.id)}</b> ${esc(d.t)}`);
+    const tds = M.todos.filter(t => t.action === a.id);
+    el.className = 'detail'; el.style.setProperty('--ic', a.initObj.col);
+    el.innerHTML = `<span class="eyebrow">${esc(a.initObj.name)} · ${esc(HL[a.h])}${a.demo ? ' · Milestone' : ''}</span>
+      <h3>${esc(a.t)}</h3><p class="why">${esc(a.why)}</p>
+      <div class="meta">${chip(a.owner)}<span class="mono">${esc(a.id)}</span><span>${when(a)}${a.ms ? '' : ` · ${Math.round((a.e - a.s) / DAY) + 1} days`}</span><span class="statpill st-${esc(a.status)}">${esc(STAT[a.status] || a.status)}${a.p && a.status !== 'done' ? ` · ${a.p}%` : ''}</span>${a.overdue ? `<span class="odp">Overdue by ${Math.round((TODAY - a.e) / DAY)} days</span>` : ''}</div>
+      ${a.away.length ? `<div class="sub" style="color:var(--leave)"><b style="color:var(--leave)">Owner on leave while this runs</b>${a.away.map(l => fmtR(l.s, l.e) + (l.note ? ' (' + esc(l.note) + ')' : '')).join(', ')}</div>` : ''}
+      ${deps.length ? `<div class="sub"><b>Depends on</b>${deps.join('<br>')}</div>` : ''}
+      ${next.length ? `<div class="sub"><b>Unlocks</b>${next.join('<br>')}</div>` : ''}
+      ${tds.length ? `<div class="sub"><b>To-dos</b>${tds.map(t => `${t.done ? '☑' : '☐'} ${esc(t.text)}`).join('<br>')}</div>` : ''}
+      ${a.clash ? `<div class="err">Starts before something it depends on has finished.</div>` : ''}
+      ${ed() && M.usingLive ? `<div><button class="btn ghost" type="button" data-edit="${esc(a.id)}">Edit this action</button></div>` : canWrite && db && M.usingLive ? `<p class="note">Switch on edit mode (top right of the tab bar) to change this action.</p>` : ''}`;
+    const eb = el.querySelector('[data-edit]'); if (eb) eb.onclick = () => openEditor(a.id, el);
+    el.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
+  }
+  function openEditor(id, el) {
+    const a = id ? M.BY[id] : null;
+    const initSel = a ? a.init : (gs.init || 'H');
+    editing = { el, id };
+    el.className = 'detail'; el.style.setProperty('--ic', IBY[initSel].col);
+    el.innerHTML = `<span class="eyebrow">${a ? 'Edit ' + esc(a.id) : 'New action'}</span>
+      <form class="ed" id="edForm">
+        <label class="wide">Action<textarea id="ed-t" required maxlength="400">${esc(a ? a.t : '')}</textarea></label>
+        <label class="wide">Why it matters<textarea id="ed-why" maxlength="600">${esc(a ? a.why : '')}</textarea></label>
+        <label>Initiative<select id="ed-init" ${a ? 'disabled' : ''}>${INITS.map(i => `<option value="${i.id}" ${i.id === initSel ? 'selected' : ''}>${esc(i.tag)}</option>`).join('')}</select></label>
+        <label>Owner<select id="ed-owner">${ownerOptions(a ? a.owner : '')}</select></label>
+        <label>Start<input type="date" id="ed-start" required value="${a ? iso(a.s) : iso(TODAY)}"></label>
+        <label>End<input type="date" id="ed-end" value="${a ? iso(a.e) : iso(TODAY)}"></label>
+        <label>Status<select id="ed-status">${Object.entries(STAT).map(([k, v]) => `<option value="${k}" ${a && a.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+        <label>Progress %<input type="number" id="ed-progress" min="0" max="100" step="5" value="${a ? a.p : 0}"></label>
+        <label class="wide">Depends on (IDs, comma separated)<input type="text" id="ed-deps" value="${esc(a ? a.deps.join(', ') : '')}" placeholder="e.g. H2, A5"></label>
+        <label class="checkline"><input type="checkbox" id="ed-demo" ${a && a.demo ? 'checked' : ''}> Milestone</label>
+        <p class="err wide" id="ed-err" hidden></p>
+        <div class="bar"><button class="btn" type="submit">Save</button><button class="btn ghost" type="button" id="ed-cancel">Cancel</button>${a ? `<span style="flex:1"></span><button class="btn danger" type="button" id="ed-del">Delete action</button>` : ''}</div>
+      </form>
+      ${M.people.length ? '' : '<p class="note">No one is on the team list yet. Add people on the Team and leave tab to assign owners.</p>'}`;
+    $('#ed-cancel', el).onclick = () => { editing = null; a ? showDetail(a.id, el) : (el.className = 'detail empty', el.textContent = 'Select a bar or row to see its detail.'); };
+    const del = $('#ed-del', el);
+    if (del) del.onclick = async () => {
+      if (del.dataset.confirm !== '1') { del.dataset.confirm = '1'; del.textContent = 'Click again to delete ' + a.id; return; }
+      if (await write(() => db.doc('actions/' + a.id).delete(), a.id + ' deleted')) { editing = null; el.className = 'detail empty'; el.textContent = 'Select an action to see its detail.'; }
+    };
+    $('#edForm', el).onsubmit = async e => {
+      e.preventDefault();
+      const err = $('#ed-err', el), start = $('#ed-start', el).value, end = $('#ed-end', el).value || start;
+      const deps = $('#ed-deps', el).value.split(/[\s,]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
+      const problem = !$('#ed-t', el).value.trim() ? 'Describe the action.' : isNaN(D(start)) ? 'Choose a start date.' : D(end) < D(start) ? 'The end date is before the start date.' : '';
+      if (problem) { err.textContent = problem; err.hidden = false; return; }
+      const init = a ? a.init : $('#ed-init', el).value;
+      const nid = a ? a.id : init + (Math.max(0, ...M.acts.filter(x => x.init === init).map(x => parseInt(x.id.slice(init.length), 10) || 0)) + 1);
+      const doc = actionDoc({ ...(a || {}), init, t: $('#ed-t', el).value.trim(), why: $('#ed-why', el).value.trim(), start, end, demo: $('#ed-demo', el).checked,
+        status: $('#ed-status', el).value, progress: +$('#ed-progress', el).value || 0, owner: $('#ed-owner', el).value, deps: deps.filter(d => d !== nid) });
+      if (await write(() => db.doc('actions/' + nid).set(doc), (a ? 'Saved ' : 'Added ') + nid)) { editing = null; lastDetail[el.id] = nid; }
+    };
+    $('#ed-t', el).focus();
+  }
+
+  /* ---------- roadmap grid ---------- */
+  let filterInit = null, demoOnly = false;
+  const initChips = cur => [`<button type="button" class="chip" data-i="" aria-pressed="${!cur}">All</button>`]
+    .concat(INITS.map(i => `<button type="button" class="chip" data-i="${i.id}" aria-pressed="${cur === i.id}"><i class="dot" style="background:${i.col}"></i>${esc(i.tag)}</button>`)).join('');
+  function renderGrid() {
+    $('#rfilter').innerHTML = initChips(filterInit);
+    $$('#rfilter button').forEach(b => b.onclick = () => { filterInit = b.dataset.i || null; renderGrid(); });
+    const inits = INITS.filter(i => !filterInit || i.id === filterInit);
+    const visible = M.acts.filter(a => shown(a) && inits.some(i => i.id === a.init));
+    // The Earlier column only appears when something is in it (unfinished work that slipped, or finished work when shown).
+    const HV = H.filter(h => h.id !== 'earlier' || visible.some(a => a.h === 'earlier'));
+    const cols = HV.length, g = $('#rgrid');
+    g.style.gridTemplateColumns = `220px repeat(${cols}, minmax(210px, 1fr))`; g.style.minWidth = `${220 + cols * 210}px`;
+    let html = `<div class="colh"><span class="eyebrow">Initiative and owner</span></div>` + HV.map((h, n) => `<div class="colh ${h.id === 'now' ? 'now' : ''} ${h.id === 'earlier' ? 'earlier' : ''} ${n === cols - 1 ? 'last' : ''}"><b>${esc(h.label)}</b><span class="mono">${h.range}</span></div>`).join('');
+    inits.forEach(i => {
+      html += `<div class="rowh" style="--ic:${i.col}"><span class="code">${i.id}</span><b>${esc(i.name)}</b>${chip(M.initOwner[i.id])}<small>${esc(i.short)}</small></div>`;
+      HV.forEach((h, n) => {
+        html += `<div class="cell ${h.id === 'earlier' ? 'earlier' : ''} ${n === cols - 1 ? 'last' : ''}">` + visible.filter(a => a.init === i.id && a.h === h.id).sort((x, y) => x.s - y.s).map(a =>
+          `<button type="button" class="act ${a.demo ? 'demo' : ''} ${a.status === 'done' ? 'done' : ''} ${a.overdue ? 'overdue' : ''} ${demoOnly && !a.demo ? 'dim' : ''}" style="--ic:${i.col}" data-a="${esc(a.id)}">
+            <span class="row1">${a.demo ? '<i class="diamond"></i>' : ''}<span>${esc(a.t)}</span></span>
+            <span class="row2">${chip(a.owner)}${a.overdue ? '<span class="odp">Overdue</span>' : ''}<span class="mono">${esc(a.id)} · ${when(a)}</span></span></button>`).join('') + `</div>`;
+      });
+    });
+    g.innerHTML = html;
+    $$('.act', g).forEach(b => b.onclick = () => ed() && M.usingLive ? openEditor(b.dataset.a, $('#detail')) : showDetail(b.dataset.a, $('#detail')));
+  }
+  $('#demoOnly').onclick = e => { demoOnly = !demoOnly; e.currentTarget.setAttribute('aria-pressed', String(demoOnly)); renderGrid(); };
+  // "Hide finished work" is one setting shared by the Roadmap and the Gantt, remembered in this browser.
+  function setHideDone(v) {
+    hideDone = v; store.set('harness-hidedone', v ? '1' : '0');
+    $$('#hideDone, #ghideDone').forEach(b => b.setAttribute('aria-pressed', String(v)));
+    renderGrid(); renderGantt();
+  }
+  $$('#hideDone, #ghideDone').forEach(b => { b.setAttribute('aria-pressed', String(hideDone)); b.onclick = () => setHideDone(!hideDone); });
+
+  /* ---------- gantt ---------- */
+  const defaultLw = () => innerWidth < 1100 ? 380 : 520;
+  const gs = { lw: Number(store.get('harness-glw')) || 0, zoom: store.get('harness-gzoom') || 'week', init: null, deps: store.get('harness-gdeps') !== 'off', demo: false, leave: store.get('harness-gleave') !== 'off', owner: '',
+    collapsed: new Set((store.get('harness-gcollapsed') || '').split(',').filter(Boolean)), sel: null, scrolled: false };
+  const ROW = 36, HEAD = 28;
+  function renderGanttTools() {
+    $('#gfilter').innerHTML = initChips(gs.init);
+    $$('#gfilter button').forEach(b => b.onclick = () => { gs.init = b.dataset.i || null; renderGanttTools(); renderGantt(); });
+    $$('[data-z]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.z === gs.zoom)));
+    $('#gdeps').setAttribute('aria-pressed', String(gs.deps));
+    $('#gdemo').setAttribute('aria-pressed', String(gs.demo));
+    $('#gleave').setAttribute('aria-pressed', String(gs.leave));
+    $('#gcollapse').textContent = INITS.every(i => gs.collapsed.has(i.id)) ? 'Expand all' : 'Collapse all';
+    $('#gowner').innerHTML = `<option value="">Everyone</option><option value="-" ${gs.owner === '-' ? 'selected' : ''}>No owner yet</option>` + M.people.map(p => `<option value="${esc(p.id)}" ${p.id === gs.owner ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+  }
+  $$('[data-z]').forEach(b => b.onclick = () => { gs.zoom = b.dataset.z; gs.scrolled = false; store.set('harness-gzoom', gs.zoom); renderGanttTools(); renderGantt(); });
+  $('#gdeps').onclick = () => { gs.deps = !gs.deps; store.set('harness-gdeps', gs.deps ? 'on' : 'off'); renderGanttTools(); renderGantt(); };
+  $('#gdemo').onclick = () => { gs.demo = !gs.demo; renderGanttTools(); renderGantt(); };
+  $('#gleave').onclick = () => { gs.leave = !gs.leave; store.set('harness-gleave', gs.leave ? 'on' : 'off'); renderGanttTools(); renderGantt(); };
+  $('#gowner').onchange = e => { gs.owner = e.target.value; renderGantt(); };
+  $('#gcollapse').onclick = () => {
+    const all = INITS.every(i => gs.collapsed.has(i.id));
+    gs.collapsed = all ? new Set() : new Set(INITS.map(i => i.id));
+    store.set('harness-gcollapsed', [...gs.collapsed].join(',')); renderGanttTools(); renderGantt();
+  };
+  $('#addAction').onclick = () => openEditor(null, $('#gdetail'));
+
+  // Moving along the timeline: Earlier / Today / Later buttons, and dragging the chart background to pan.
+  function scrollGantt(to) {
+    if (gs.zoom === 'fit') { gs.zoom = 'week'; store.set('harness-gzoom', 'week'); renderGanttTools(); renderGantt(); }
+    const wrap = $('#gwrap'), g = gs.geo; if (!g) return;
+    const left = to === 'today' ? Math.max(0, g.x(TODAY) - 2 * 7 * g.px) : wrap.scrollLeft + (to === 'next' ? 1 : -1) * 4 * 7 * g.px;
+    wrap.scrollLeft = left;   // an instant jump: smooth scrolling inside the chart box is not honoured by every browser
+  }
+  $('#gprev').onclick = () => scrollGantt('prev');
+  $('#gnext').onclick = () => scrollGantt('next');
+  $('#gtodayBtn').onclick = () => scrollGantt('today');
+  (() => {
+    const wrap = $('#gwrap'); let pan = null;
+    wrap.addEventListener('pointerdown', e => {
+      if (e.button !== 0 || e.pointerType !== 'mouse' || e.target.closest('button, a, input, select, .glabel')) return;
+      pan = { x: e.clientX, y: e.clientY, l: wrap.scrollLeft, t: wrap.scrollTop, moved: false };
+    });
+    addEventListener('pointermove', e => {
+      if (!pan) return;
+      const dx = e.clientX - pan.x, dy = e.clientY - pan.y;
+      if (!pan.moved && Math.abs(dx) + Math.abs(dy) < 4) return;
+      pan.moved = true; wrap.classList.add('panning');
+      wrap.scrollLeft = pan.l - dx; wrap.scrollTop = pan.t - dy;
+    });
+    addEventListener('pointerup', () => { if (pan) { pan = null; wrap.classList.remove('panning'); } });
+  })();
+  // Resizing the description column: drag the edge in the header; the width is remembered in this browser.
+  (() => {
+    const wrap = $('#gwrap'); let rs = null, raf = 0;
+    wrap.addEventListener('pointerdown', e => {
+      const g = e.target.closest('.lwgrip'); if (!g || e.button !== 0) return;
+      e.preventDefault();
+      rs = { x: e.clientX, w: gs.geo ? gs.geo.lw : (gs.lw || defaultLw()) };
+      g.classList.add('on'); document.body.style.cursor = 'col-resize';
+    });
+    addEventListener('pointermove', e => {
+      if (!rs) return;
+      const w = Math.round(Math.min(Math.max(200, rs.w + e.clientX - rs.x), wrap.clientWidth - 200));
+      if (w === gs.lw) return;
+      gs.lw = w; cancelAnimationFrame(raf); raf = requestAnimationFrame(renderGantt);
+    });
+    addEventListener('pointerup', () => {
+      if (!rs) return;
+      rs = null; document.body.style.cursor = '';
+      store.set('harness-glw', String(gs.lw)); renderGantt();
+    });
+    wrap.addEventListener('dblclick', e => {
+      if (!e.target.closest('.lwgrip')) return;
+      gs.lw = 0; store.set('harness-glw', ''); renderGantt();
+    });
+  })();
+
+  function renderGantt() {
+    const wrap = $('#gwrap'); if (view !== 'gantt') return;
+    const lw = innerWidth < 640 ? 170 : Math.min(gs.lw || defaultLw(), Math.max(240, wrap.clientWidth - 200));
+    const spanS = [...M.acts.map(a => a.s), TODAY], spanE = [...M.acts.map(a => a.e), QEND, N1];
+    let t0 = Math.min(...spanS) - 7 * DAY; t0 -= ((new Date(t0).getUTCDay() + 6) % 7) * DAY;
+    const t1 = Math.max(...spanE) + 8 * 7 * DAY;   // eight spare weeks after the last item, so there is room to plan ahead
+    const days = Math.round((t1 - t0) / DAY) + 1;
+    const px = gs.zoom === 'week' ? 20 : gs.zoom === 'month' ? 7 : Math.max(3, (wrap.clientWidth - lw - 2) / days);
+    const W = Math.ceil(days * px), x = t => (t - t0) / DAY * px;
+    const body = $('#gbody');
+    body.style.setProperty('--lw', lw + 'px'); body.style.setProperty('--wk', 7 * px + 'px');
+
+    const seg = (s, e, label, cls = '') => `<div class="gseg ${cls}" style="left:${x(s)}px;width:${x(e + DAY) - x(s)}px" title="${esc(label)}">${esc(label)}</div>`;
+    let months = '', m = Date.UTC(new Date(t0).getUTCFullYear(), new Date(t0).getUTCMonth(), 1);
+    while (m <= t1) {
+      const nm = Date.UTC(new Date(m).getUTCFullYear(), new Date(m).getUTCMonth() + 1, 1);
+      months += seg(Math.max(m, t0), Math.min(nm - DAY, t1), fmt(m, { month: px * 30 > 70 ? 'long' : 'short', year: 'numeric' }));
+      m = nm;
+    }
+    let weeks = '';
+    for (let w = t0; w <= t1; w += 7 * DAY) weeks += seg(w, Math.min(w + 6 * DAY, t1), 7 * px >= 46 ? fmt(w) : 7 * px >= 18 ? String(new Date(w).getUTCDate()) : '');
+    const todayLbl = TODAY >= t0 && TODAY <= t1 ? `<span class="gtodaylbl" style="left:${x(TODAY) + px / 2}px">Today · ${fmt(TODAY)}</span>` : '';
+    const grip = innerWidth < 640 ? '' : '<span class="lwgrip" title="Drag to widen or narrow the descriptions. Double-click to reset." role="separator" aria-orientation="vertical" aria-label="Resize the description column"></span>';
+    let html = `<div class="grow h" style="top:0"><div class="glabel">Horizon${grip}</div><div class="gtrack" style="width:${W}px">${H.map(h => { const s = Math.max(h.s, t0), e = Math.min(h.e, t1); return s <= e ? seg(s, e, h.label, h.id === 'now' ? 'cur' : '') : ''; }).join('')}${todayLbl}</div></div>
+      <div class="grow h" style="top:${HEAD}px"><div class="glabel">Month${grip}</div><div class="gtrack" style="width:${W}px">${months}</div></div>
+      <div class="grow h" style="top:${HEAD * 2}px"><div class="glabel">Week commencing${grip}</div><div class="gtrack" style="width:${W}px">${weeks}</div></div>`;
+
+    const rows = []; let y = HEAD * 3;
+    const ownerOk = a => !gs.owner || (gs.owner === '-' ? !M.PBY[a.owner] : a.owner === gs.owner);
+    INITS.filter(i => !gs.init || i.id === gs.init).forEach(i => {
+      const acts = M.acts.filter(a => a.init === i.id && (!gs.demo || a.demo) && ownerOk(a) && shown(a)).sort((p, q) => p.s - q.s || p.e - q.e);
+      if (!acts.length) {
+        // An initiative with no actions yet (for example one just added) still gets its row, unless a filter is hiding things.
+        if (gs.demo || gs.owner || hideDone || M.acts.some(a => a.init === i.id)) return;
+        html += `<div class="grow sum" style="--ic:${i.col}"><div class="glabel"><i class="dot" style="background:${i.col};margin-left:26px"></i><span class="txt">${esc(i.name)}</span>${chip(M.initOwner[i.id], false)}</div>
+          <div class="gtrack" style="width:${W}px"><span class="gown" style="left:${Math.max(8, x(TODAY) + 12)}px;top:10px">No actions yet</span></div></div>`;
+        y += ROW; return;
+      }
+      const s = Math.min(...acts.map(a => a.s)), e = Math.max(...acts.map(a => a.e)), open = !gs.collapsed.has(i.id);
+      const dots = acts.filter(a => a.demo).map(a => `<i class="gsdot" style="left:${x(a.e) + px / 2}px" title="${esc(a.id + ': ' + a.t)}"></i>`).join('');
+      html += `<div class="grow sum" style="--ic:${i.col}"><div class="glabel"><button type="button" class="tog" data-tog="${i.id}" aria-expanded="${open}" aria-label="${open ? 'Collapse' : 'Expand'} ${esc(i.name)}">${open ? '−' : '+'}</button><i class="dot" style="background:${i.col}"></i><span class="txt">${esc(i.name)}</span>${chip(M.initOwner[i.id], false)}</div>
+        <div class="gtrack" style="width:${W}px"><div class="gsum" style="left:${x(s)}px;width:${x(e + DAY) - x(s)}px" title="${esc(i.name)}: ${fmtR(s, e)}"></div>${dots}</div></div>`;
+      y += ROW;
+      if (!open) return;
+      acts.forEach(a => {
+        const own = M.PBY[a.owner];
+        const tip = esc(`${a.id} · ${when(a)} · ${STAT[a.status] || a.status}${a.overdue ? ' · OVERDUE' : ''} · ${own ? own.name : 'No owner yet'}\n${a.t}`);
+        const od = a.overdue ? 'overdue' : '';
+        const right = a.ms ? x(a.s) + px / 2 + 10 : x(a.e + DAY) + (a.demo ? 10 : 5);
+        const away = gs.leave ? a.away.map(l => { const s2 = Math.max(l.s, a.s), e2 = Math.min(l.e, a.e); return `<i class="gaway" style="left:${x(s2)}px;width:${Math.max(px, x(e2 + DAY) - x(s2))}px" title="${esc(own.name)} on leave ${fmtR(l.s, l.e)}"></i>`; }).join('') : '';
+        const mark = a.ms
+          ? `<button type="button" class="gms ${a.demo ? 'demo' : ''} ${a.clash ? 'clash' : ''} ${od}" style="left:${x(a.s) + px / 2}px" data-a="${esc(a.id)}" title="${tip}" aria-label="${esc(a.id + ' ' + a.t)}"></button>`
+          : `<button type="button" class="gbar ${esc(a.status)} ${a.clash ? 'clash' : ''} ${od}" style="left:${x(a.s)}px;width:${Math.max(4, x(a.e + DAY) - x(a.s))}px;--p:${a.p}%" data-a="${esc(a.id)}" title="${tip}" aria-label="${esc(a.id + ' ' + a.t)}"></button>`
+            + (a.demo ? `<i class="gsdot" style="left:${x(a.e + DAY)}px;top:11px;width:12px;height:12px;margin-left:-6px"></i>` : '');
+        const ownLabel = a.overdue ? `Overdue${own ? ' · ' + esc(own.name) : ''}` : (own ? esc(own.name) : '');
+        html += `<div class="grow act-row ${gs.sel === a.id ? 'sel' : ''} ${od}" data-row="${esc(a.id)}" style="--ic:${a.initObj.col}"><div class="glabel" title="${esc(a.t)}"><span class="id">${esc(a.id)}</span><span class="txt">${esc(a.t)}</span>${chip(a.owner, false)}</div><div class="gtrack" style="width:${W}px">${away}${mark}<span class="gown ${a.overdue ? 'over' : ''}" style="left:${right}px">${ownLabel}</span></div></div>`;
+        rows.push({ a, y: y + ROW / 2 }); y += ROW;
+      });
+    });
+
+    if (gs.leave && M.people.length) {
+      const open = !gs.collapsed.has('_leave');
+      html += `<div class="grow sum" style="--ic:var(--leave)"><div class="glabel"><button type="button" class="tog" data-tog="_leave" aria-expanded="${open}" aria-label="${open ? 'Collapse' : 'Expand'} team leave">${open ? '−' : '+'}</button><span class="txt">Team leave</span></div><div class="gtrack" style="width:${W}px"></div></div>`;
+      y += ROW;
+      if (open) M.people.filter(p => !gs.owner || gs.owner === p.id).forEach(p => {
+        const bars = M.leave.filter(l => l.person === p.id && l.e >= t0 && l.s <= t1).map(l => `<button type="button" class="gleave" data-lid="${esc(l.id)}" style="left:${x(l.s)}px;width:${Math.max(px, x(l.e + DAY) - x(l.s))}px" title="${esc(p.name)}: ${fmtR(l.s, l.e)}${l.note ? ' · ' + esc(l.note) : ''}">${esc(l.note || 'Leave')}</button>`).join('');
+        html += `<div class="grow"><div class="glabel">${chip(p.id)}<span class="txt muted" style="font-size:12px">${esc(p.role || '')}</span></div><div class="gtrack" style="width:${W}px">${bars}</div></div>`;
+        y += ROW;
+      });
+    }
+    if (!rows.length && !(gs.leave && M.people.length)) html += `<div class="empty-state">Nothing matches these filters.</div>`;
+
+    let svg = '';
+    if (gs.deps) {
+      const at = Object.fromEntries(rows.map(r => [r.a.id, r])), paths = [];
+      rows.forEach(r => r.a.deps.forEach(d => {
+        const p = at[d]; if (!p) return;
+        const bad = p.a.e > r.a.s;
+        const x1 = p.a.ms ? x(p.a.s) + px / 2 + 7 : x(p.a.e + DAY), y1 = p.y;
+        const x2 = (r.a.ms ? x(r.a.s) + px / 2 - 8 : x(r.a.s)) - 1, y2 = r.y;
+        const bend = y2 > y1 ? y2 - ROW / 2 : y2 + ROW / 2, d1 = x1 + 6;
+        const path = x2 - 6 >= d1 ? `M${x1} ${y1} H${d1} V${y2} H${x2}` : `M${x1} ${y1} H${d1} V${bend} H${x2 - 8} V${y2} H${x2}`;
+        paths.push(`<path class="${bad ? 'clash' : ''}" d="${path}" marker-end="url(#${bad ? 'arc' : 'ar'})"/>`);
+      }));
+      svg = `<svg class="gdeps" style="left:${lw}px" width="${W}" height="${y}" aria-hidden="true"><defs>
+        <marker id="ar" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L6 3L0 6z"/></marker>
+        <marker id="arc" class="clash" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L6 3L0 6z"/></marker></defs>${paths.join('')}</svg>`;
+    }
+    const today = TODAY >= t0 && TODAY <= t1 ? `<div class="gtoday" style="left:${lw + x(TODAY) + px / 2}px"></div>` : '';
+    gs.geo = { px, x, lw };
+    body.innerHTML = html + svg + today;
+
+    $$('[data-tog]', body).forEach(b => b.onclick = () => {
+      const id = b.dataset.tog; gs.collapsed.has(id) ? gs.collapsed.delete(id) : gs.collapsed.add(id);
+      store.set('harness-gcollapsed', [...gs.collapsed].join(',')); renderGanttTools(); renderGantt();
+    });
+    const pick = id => { gs.sel = id; $$('.grow.sel', body).forEach(r => r.classList.remove('sel')); body.querySelector(`[data-row="${CSS.escape(id)}"]`)?.classList.add('sel'); showDetail(id, $('#gdetail')); };
+    const open = id => { if (suppressClick) return; ed() && M.usingLive ? (gs.sel = id, $$('.grow.sel', body).forEach(r => r.classList.remove('sel')), body.querySelector(`[data-row="${CSS.escape(id)}"]`)?.classList.add('sel'), openEditor(id, $('#gdetail'))) : pick(id); };
+    $$('[data-a]', body).forEach(b => b.onclick = () => open(b.dataset.a));
+    $$('.act-row .glabel', body).forEach(l => l.onclick = () => open(l.parentElement.dataset.row));
+    $$('.gleave', body).forEach(b => b.onclick = () => { if (!suppressClick && ed()) openLeaveEditor(b.dataset.lid, $('#gdetail')); });
+    if (ed()) {
+      if (M.usingLive) $$('.gbar, .gms', body).forEach(b => { enableDrag(b, 'action', b.dataset.a, px); enableKeys(b, b.dataset.a, px); });
+      $$('.gleave', body).forEach(b => enableDrag(b, 'leave', b.dataset.lid, px));
+    }
+    if (!gs.scrolled && gs.zoom !== 'fit') { wrap.scrollLeft = Math.max(0, x(TODAY) - 2 * 7 * px); gs.scrolled = true; }
+  }
+  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (gs.zoom === 'fit') renderGantt(); }, 120); });
+
+  /* ---------- drag and keyboard date changes (edit mode) ---------- */
+  const itemOf = (kind, id) => kind === 'action' ? M.BY[id] : M.leave.find(l => l.id === id);
+  const flush = () => { if (pendingRender) { pendingRender = false; renderAll(); } else renderGantt(); };
+  function place(el, item, s, e, px, left0, w0) {
+    el.style.left = (left0 + (s - item.s) / DAY * px) + 'px';
+    if (!el.classList.contains('gms')) el.style.width = Math.max(4, (e - s) / DAY * px + px) + 'px';
+  }
+  const label = (s, e) => s === e ? fmt(s, { weekday: 'short', day: 'numeric', month: 'short' }) : `${fmtR(s, e)} · ${Math.round((e - s) / DAY) + 1} days`;
+  async function saveDates(kind, id, s, e) {
+    const it = itemOf(kind, id); if (!it || (it.s === s && it.e === e)) return;
+    const path = (kind === 'action' ? 'actions/' : 'leave/') + id;
+    await write(() => db.doc(path).update({ start: iso(s), end: iso(e) }), `${kind === 'action' ? id : 'Leave'} moved to ${s === e ? fmt(s) : fmtR(s, e)}`);
+  }
+  function enableDrag(el, kind, id, px) {
+    el.addEventListener('pointerdown', ev => {
+      if (!ed() || ev.button !== 0) return;
+      const it = itemOf(kind, id); if (!it) return;
+      const r = el.getBoundingClientRect(), off = ev.clientX - r.left, isMs = el.classList.contains('gms');
+      const mode = isMs ? 'move' : r.width > 20 && off < 7 ? 'start' : r.width > 20 && off > r.width - 7 ? 'end' : 'move';
+      const left0 = parseFloat(el.style.left), w0 = parseFloat(el.style.width) || 0, tip = $('#dragtip');
+      drag = { moved: false, ns: it.s, ne: it.e };
+      try { el.setPointerCapture(ev.pointerId); } catch (e) {}
+      const move = e2 => {
+        const dx = e2.clientX - ev.clientX;
+        if (!drag.moved && Math.abs(dx) < 4) return;
+        drag.moved = true; el.classList.add('dragging');
+        const d = Math.round(dx / px) * DAY;
+        let s = it.s, e = it.e;
+        if (mode === 'move') { s += d; e += d; } else if (mode === 'start') s = Math.min(it.s + d, it.e); else e = Math.max(it.e + d, it.s);
+        drag.ns = s; drag.ne = e; place(el, it, s, e, px, left0, w0);
+        tip.hidden = false; tip.textContent = `${kind === 'action' ? id + ' · ' : ''}${label(s, e)}`;
+        tip.style.left = Math.min(e2.clientX + 14, innerWidth - 220) + 'px'; tip.style.top = (e2.clientY - 34) + 'px';
+      };
+      const up = async () => {
+        el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up);
+        tip.hidden = true;
+        const dd = drag; drag = null;
+        if (!dd.moved) return;                       // a plain click: the click handler opens the editor
+        suppressClick = true; setTimeout(() => suppressClick = false, 0);
+        await saveDates(kind, id, dd.ns, dd.ne);
+        flush();
+      };
+      el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    });
+  }
+  let kb = null;
+  function enableKeys(el, id, px) {
+    el.addEventListener('keydown', ev => {
+      if (!ed() || (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight')) return;
+      ev.preventDefault();
+      const it = M.BY[id]; if (!it) return;
+      if (!kb || kb.id !== id) kb = { id, s: it.s, e: it.e, left0: parseFloat(el.style.left), w0: parseFloat(el.style.width) || 0 };
+      const d = (ev.key === 'ArrowRight' ? 1 : -1) * DAY;
+      if (ev.shiftKey && !it.ms) kb.e = Math.max(kb.s, kb.e + d); else { kb.s += d; kb.e += d; }
+      place(el, it, kb.s, kb.e, px, kb.left0, kb.w0);
+      const tip = $('#dragtip'), r = el.getBoundingClientRect();
+      tip.hidden = false; tip.textContent = `${id} · ${label(kb.s, kb.e)}`; tip.style.left = Math.min(r.left, innerWidth - 220) + 'px'; tip.style.top = (r.top - 30) + 'px';
+      drag = drag || { keys: true };
+      clearTimeout(kb.t);
+      kb.t = setTimeout(async () => { const k = kb; kb = null; tip.hidden = true; if (drag && drag.keys) drag = null; await saveDates('action', id, k.s, k.e); flush(); setTimeout(() => $(`#gbody [data-a="${CSS.escape(id)}"]`)?.focus(), 50); }, 700);
+    });
+  }
+  function openLeaveEditor(lid, el) {
+    const l = M.leave.find(x => x.id === lid); if (!l) return;
+    el.className = 'detail'; el.style.setProperty('--ic', 'var(--leave)'); editing = { el, id: 'leave:' + lid };
+    el.innerHTML = `<span class="eyebrow">Edit leave</span>
+      <form class="ed" id="lvEd"><label>Person<select id="lve-person">${M.people.map(p => `<option value="${esc(p.id)}" ${p.id === l.person ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></label>
+      <label>From<input type="date" id="lve-start" value="${iso(l.s)}" required></label><label>To<input type="date" id="lve-end" value="${iso(l.e)}" required></label>
+      <label class="wide">Note<input type="text" id="lve-note" maxlength="80" value="${esc(l.note || '')}"></label>
+      <div class="bar"><button class="btn" type="submit">Save</button><button class="btn ghost" type="button" id="lve-cancel">Cancel</button><span style="flex:1"></span><button class="btn danger" type="button" id="lve-del">Delete leave</button></div></form>`;
+    const done = () => { editing = null; el.className = 'detail empty'; el.textContent = 'Select a bar or row to see its detail.'; };
+    $('#lve-cancel', el).onclick = done;
+    $('#lve-del', el).onclick = async e => { const b = e.currentTarget; if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Click again to delete'; return; } if (await write(() => db.doc('leave/' + lid).delete(), 'Leave removed')) done(); };
+    $('#lvEd', el).onsubmit = async e => {
+      e.preventDefault();
+      const s = $('#lve-start', el).value, en = $('#lve-end', el).value || s;
+      if (D(en) < D(s)) { toast('The end date is before the start date.'); return; }
+      if (await write(() => db.doc('leave/' + lid).set({ person: $('#lve-person', el).value, start: s, end: en, note: $('#lve-note', el).value.trim() }), 'Leave updated')) done();
+    };
+  }
+
+  function renderChecks() {
+    const counts = M.acts.reduce((c, a) => (c[a.status] = (c[a.status] || 0) + 1, c), {});
+    const noOwner = M.acts.filter(a => !M.PBY[a.owner] && a.status !== 'done');
+    const overdue = M.todos.filter(t => !t.done && t.due && D(t.due) < TODAY);
+    const lateActs = M.acts.filter(a => a.overdue).sort((p, q) => p.e - q.e);
+    const ownerName = a => (M.PBY[a.owner] ? M.PBY[a.owner].name : 'no owner');
+    const nextDemo = M.acts.filter(a => a.demo && a.e >= TODAY && a.status !== 'done').sort((p, q) => p.e - q.e)[0];
+    const bad = M.issues.filter(i => i.kind === 'bad'), warn = M.issues.filter(i => i.kind === 'warn');
+    $('#gchecks').innerHTML = `<h3>Schedule checks</h3>
+      <p>${M.acts.length} actions · ${M.acts.filter(a => a.demo).length} milestones · ${Object.entries(counts).map(([k, v]) => `${v} ${(STAT[k] || k).toLowerCase()}`).join(' · ')}</p>
+      ${(() => { const bad = M.acts.filter(a => a.demo && (a.mstate === 'late' || a.mstate === 'risk')).sort((p, q) => p.s - q.s);
+        return bad.length ? `<p class="warn">${bad.length} ${bad.length === 1 ? 'milestone is' : 'milestones are'} overdue or at risk</p><ul>${bad.map(m => `<li><b>${esc(m.id)}</b> ${esc(m.t.length > 60 ? m.t.slice(0, 60) + '…' : m.t)} <span class="mono">(${when(m)})</span> · ${MSTATE[m.mstate]}: ${esc(m.mwhy.join('; '))}</li>`).join('')}</ul>` : '<p class="ok">Every upcoming milestone is on track.</p>'; })()}
+      ${nextDemo ? `<p>Next milestone: <b>${esc(nextDemo.id)}</b> ${esc(nextDemo.t)} <span class="mono">(${when(nextDemo)})</span> ${chip(nextDemo.owner)}</p>` : ''}
+      ${lateActs.length ? `<p class="bad">${lateActs.length} overdue ${lateActs.length === 1 ? 'action' : 'actions'}: past the end date and not done</p><ul>${lateActs.map(a => `<li><b>${esc(a.id)}</b> ${esc(a.t.length > 70 ? a.t.slice(0, 70) + '…' : a.t)} <span class="mono">(due ${fmt(a.e)}, ${Math.round((TODAY - a.e) / DAY)} days late)</span> · ${esc(ownerName(a))}</li>`).join('')}</ul>` : '<p class="ok">No overdue actions.</p>'}
+      ${bad.length ? `<p class="bad">${bad.length} date ${bad.length === 1 ? 'clash' : 'clashes'} to resolve</p><ul>${bad.map(i => `<li>${esc(i.msg)}</li>`).join('')}</ul>` : '<p class="ok">No dependency clashes.</p>'}
+      ${warn.length ? `<p class="warn">${warn.length} ${warn.length === 1 ? 'action has its' : 'actions have their'} owner on leave</p><ul>${warn.map(i => `<li>${esc(i.msg)}</li>`).join('')}</ul>` : ''}
+      ${noOwner.length ? `<p class="warn">${noOwner.length} open ${noOwner.length === 1 ? 'action has' : 'actions have'} no owner</p>` : '<p class="ok">Every open action has an owner.</p>'}
+      ${overdue.length ? `<p class="bad">${overdue.length} overdue to-do${overdue.length === 1 ? '' : 's'}</p>` : ''}`;
+  }
+
+  /* ---------- to-do ---------- */
+  const tf = { who: store.get('harness-tdwho') || '', show: 'open' };
+  function renderTodos() {
+    const open = M.todos.filter(t => !t.done);
+    $('#todoCount').textContent = open.length;
+    if (inlineEdit && inlineEdit.section === 'todo' && $('#todoList .inl')) return;
+    if (!editing || editing.el.id !== 'todoForm') {
+      const keep = $('#td-owner').value; $('#td-owner').innerHTML = ownerOptions(keep);
+      const ka = $('#td-action').value;
+      $('#td-action').innerHTML = `<option value="">None</option>` + INITS.map(i => `<optgroup label="${esc(i.tag)}">${M.acts.filter(a => a.init === i.id).sort((p, q) => p.s - q.s).map(a => `<option value="${esc(a.id)}" ${a.id === ka ? 'selected' : ''}>${esc(a.id)} · ${esc(a.t.slice(0, 60))}${a.t.length > 60 ? '…' : ''}</option>`).join('')}</optgroup>`).join('');
+    }
+    $('#todoFilters').innerHTML = `<span class="lbl muted" style="font-size:12.5px">Show</span>` + [['open', 'Open'], ['done', 'Done'], ['all', 'All']].map(([k, v]) => `<button type="button" class="chip" data-show="${k}" aria-pressed="${tf.show === k}">${v}</button>`).join('')
+      + `<span class="lbl muted" style="font-size:12.5px;margin-left:10px">Owner</span><select id="td-who" style="width:auto"><option value="">Everyone</option><option value="-" ${tf.who === '-' ? 'selected' : ''}>No owner yet</option>${M.people.map(p => `<option value="${esc(p.id)}" ${p.id === tf.who ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>`;
+    $$('[data-show]').forEach(b => b.onclick = () => { tf.show = b.dataset.show; renderTodos(); });
+    $('#td-who').onchange = e => { tf.who = e.target.value; store.set('harness-tdwho', tf.who); renderTodos(); };
+    const list = M.todos.filter(t => (tf.show === 'all' || (tf.show === 'done') === !!t.done) && (!tf.who || (tf.who === '-' ? !M.PBY[t.owner] : t.owner === tf.who)))
+      .sort((a, b) => (a.done - b.done) || ((D(a.due) || 9e15) - (D(b.due) || 9e15)) || String(a.created).localeCompare(String(b.created)));
+    const el = $('#todoList');
+    if (!db) { el.innerHTML = `<div class="empty-state">The to-do list is stored live. Open the plan app to see and add to-dos.</div>`; return; }
+    if (!list.length) { el.innerHTML = `<div class="empty-state">${M.todos.length ? 'No to-dos match these filters.' : ed() ? 'No to-dos yet. Add the first one above.' : canWrite ? 'No to-dos yet. Switch on edit mode to add one.' : 'No to-dos yet.'}</div>`; return; }
+    const actOpts = sel => `<option value="">None</option>` + INITS.map(i => `<optgroup label="${esc(i.tag)}">${M.acts.filter(a => a.init === i.id).sort((p, q) => p.s - q.s).map(a => `<option value="${esc(a.id)}" ${a.id === sel ? 'selected' : ''}>${esc(a.id)} · ${esc(a.t.slice(0, 60))}${a.t.length > 60 ? '…' : ''}</option>`).join('')}</optgroup>`).join('');
+    el.innerHTML = list.map(t => {
+      const due = D(t.due), over = !t.done && due < TODAY;
+      if (inlineEdit && inlineEdit.kind === 'todo' && inlineEdit.id === t.id) return `<form class="inl" data-tdform="${esc(t.id)}">
+        <label class="wide">What needs doing<input type="text" name="text" required maxlength="300" value="${esc(t.text)}"></label>
+        <label>Owner<select name="owner">${ownerOptions(t.owner)}</select></label><label>Due<input type="date" name="due" value="${esc(t.due || '')}"></label>
+        <label>Links to action<select name="action">${actOpts(t.action)}</select></label>
+        <div class="bar"><button class="btn" type="submit">Save</button><button class="btn ghost" type="button" data-cancel>Cancel</button></div></form>`;
+      return `<div class="todo ${t.done ? 'done' : ''}"><input type="checkbox" data-td="${esc(t.id)}" ${t.done ? 'checked' : ''} ${ed() ? '' : 'disabled'} aria-label="Mark done: ${esc(t.text)}">
+        <div class="tx"><span>${esc(t.text)}</span><small>${t.action && M.BY[t.action] ? `<button type="button" class="linkbtn" data-goto="${esc(t.action)}">${esc(t.action)}</button>` : ''}${t.done && t.doneAt ? `<span>Done ${fmt(D(t.doneAt))}</span>` : ''}</small></div>
+        ${chip(t.owner)}
+        <span class="due ${over ? 'over' : ''}">${!isNaN(due) ? (over ? 'Overdue · ' : '') + fmt(due) : ''}${ed() ? ` <span class="rowbtns"><button type="button" class="pen" data-tde="${esc(t.id)}" aria-label="Edit to-do">Edit</button><button type="button" class="x" data-tdx="${esc(t.id)}" aria-label="Delete to-do">×</button></span>` : ''}</span></div>`;
+    }).join('');
+    $$('[data-tde]', el).forEach(b => b.onclick = () => { inlineEdit = { section: 'todo', kind: 'todo', id: b.dataset.tde }; renderTodos(); $('#todoList .inl input')?.focus(); });
+    $$('[data-tdform]', el).forEach(f => {
+      f.querySelector('[data-cancel]').onclick = () => { inlineEdit = null; renderTodos(); };
+      f.onsubmit = async e => {
+        e.preventDefault(); const fd = new FormData(f), text = String(fd.get('text')).trim(); if (!text) return;
+        if (await write(() => db.doc('todos/' + f.dataset.tdform).update({ text, owner: fd.get('owner'), due: fd.get('due') || '', action: fd.get('action') }), 'To-do updated')) { inlineEdit = null; renderTodos(); }
+      };
+    });
+    $$('[data-td]', el).forEach(c => c.onchange = () => write(() => db.doc('todos/' + c.dataset.td).update({ done: c.checked, doneAt: c.checked ? iso(TODAY) : '' })));
+    $$('[data-tdx]', el).forEach(b => b.onclick = () => write(() => db.doc('todos/' + b.dataset.tdx).delete(), 'To-do deleted'));
+    $$('[data-goto]', el).forEach(b => b.onclick = () => { window.showView('roadmap'); showDetail(b.dataset.goto, $('#detail')); });
+  }
+  $('#todoForm').onsubmit = async e => {
+    e.preventDefault();
+    const text = $('#td-text').value.trim(); if (!text) return;
+    const ok = await write(() => db.collection('todos').add({ text, owner: $('#td-owner').value, due: $('#td-due').value || '', action: $('#td-action').value, done: false, created: new Date().toISOString() }), 'To-do added');
+    if (ok) { $('#td-text').value = ''; $('#td-due').value = ''; $('#td-text').focus(); }
+  };
+
+  /* ---------- version and last change ---------- */
+  const vnum = v => String(v || '').split('.').map(n => parseInt(n, 10) || 0);
+  const vcmp = (a, b) => { const x = vnum(a), y = vnum(b); for (let i = 0; i < Math.max(x.length, y.length); i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; } return 0; };
+  function versions() {
+    const src = live.versions && live.versions.length ? live.versions : S.versions;
+    return src.slice().sort((a, b) => vcmp(b.version, a.version) || String(b.date).localeCompare(String(a.date)));
+  }
+  function renderVersion() {
+    const vs = versions(), cur = vs[0];
+    if (cur) {
+      $('#verBtn').innerHTML = `<b>Version ${esc(cur.version)}</b><span>Last updated ${fmt(D(cur.date), { day: 'numeric', month: 'short', year: 'numeric' })} by ${esc(cur.by)}</span>`;
+    }
+    const inApp = window.HARNESS_APP === 'server';
+    const dl = v => inApp && typeof v.snapshot === 'string' && /^[A-Za-z0-9._-]+\.html$/.test(v.snapshot) ? ` · <a href="/exports/${esc(v.snapshot)}" download>Download read-only HTML</a>` : '';
+    $('#histList').innerHTML = vs.map((v, n) => `<li class="${n === 0 ? 'cur' : ''}"><b>${esc(v.version)}</b><span class="d mono muted">${isNaN(D(v.date)) ? '' : fmt(D(v.date), { day: 'numeric', month: 'short', year: 'numeric' })}</span><span>${esc(v.notes)}<small>${esc(v.by)}${dl(v)}</small></span></li>`).join('');
+    $('#exportNow').hidden = !inApp;
+    $('#backupBox').hidden = !inApp;
+    $('#restoreArea').hidden = !ed();
+    const f = $('#verForm'); f.hidden = !ed();
+    if (ed() && !f.contains(document.activeElement)) {
+      const nv = vnum(cur && cur.version); nv[1] = (nv[1] || 0) + 1;
+      $('#vf-version').value = `${nv[0] || 0}.${nv[1]}`; $('#vf-date').value = iso(TODAY); if (!$('#vf-by').value) $('#vf-by').value = cur ? cur.by : '';
+    }
+    $('#exportBtn').hidden = window.HARNESS_APP !== 'server';
+    if (window.HARNESS_APP === 'server' && window.HARNESS_ME && !renderVersion.me) {
+      renderVersion.me = true;
+      window.HARNESS_ME.then(me => { if (me && me.passwordGate) { $('#signOutForm').hidden = false; if (me.name && me.id !== 'local') $('#signedInAs').textContent = ' (' + me.name + ')'; } });
+    }
+    const le = (live.meta || []).find(d => d.id === 'lastEdit'), el = $('#lastEdit');
+    if (!le || !le.at) { el.textContent = ''; return; }
+    const at = new Date(le.at), stamp = isNaN(at) ? '' : at.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    el.textContent = `Last change ${stamp}`;
+    if (le.by && userCap && typeof userCap.profiles === 'function') userCap.profiles([le.by]).then(ps => { const nm = ps[le.by] && ps[le.by].name; if (nm) el.textContent = `Last change ${stamp} by ${nm}`; }).catch(() => {});
+  }
+  // Restore replaces the whole plan, so it reads the file first, says what it holds, and asks for a deliberate confirm.
+  $('#restoreFile').onchange = async e => {
+    const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    const box = $('#restoreConfirm');
+    let backup;
+    try { backup = JSON.parse(await f.text()); } catch (err) { backup = null; }
+    if (!backup || backup.app !== 'harness-plan' || !backup.collections) { box.hidden = false; box.innerHTML = '<p class="err">That file is not a Harness plan backup.</p>'; return; }
+    const count = c => (backup.collections[c] || []).length, when = isNaN(new Date(backup.exportedAt)) ? 'an unknown date' : new Date(backup.exportedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    box.hidden = false;
+    box.innerHTML = `<p><b>Replace the whole plan with this backup?</b> It was taken ${esc(when)} and holds ${count('actions')} actions, ${count('people')} people, ${count('todos')} to-dos, ${count('versions')} versions and ${Object.keys(backup.photos || {}).length} photos. Everything in the plan now will be replaced. Download a backup first if you might want it back.</p>
+      <div class="chips"><button type="button" class="btn danger" id="restoreGo">Replace the plan with this backup</button><button type="button" class="btn ghost" id="restoreCancel">Cancel</button></div>`;
+    $('#restoreCancel').onclick = () => { box.hidden = true; box.innerHTML = ''; };
+    $('#restoreGo').onclick = async ev => {
+      ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Restoring…';
+      try {
+        const res = await fetch('/api/restore?confirm=replace-everything', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify(backup) });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(j.message || 'The restore did not complete.');
+        box.innerHTML = `<p class="ok">Restored ${j.restored} records and ${j.photos} photos. Reloading…</p>`;
+        setTimeout(() => location.reload(), 900);
+      } catch (err) { box.innerHTML = `<p class="err">${esc(err.message)}</p>`; }
+    };
+  };
+  $('#verBtn').onclick = () => { const h = $('#history'); h.hidden = !h.hidden; $('#verBtn').setAttribute('aria-expanded', String(!h.hidden)); };
+  $('#histClose').onclick = () => { $('#history').hidden = true; $('#verBtn').setAttribute('aria-expanded', 'false'); };
+  $('#verForm').onsubmit = async e => {
+    e.preventDefault();
+    const doc = { version: $('#vf-version').value.trim(), date: $('#vf-date').value, by: $('#vf-by').value.trim(), notes: $('#vf-notes').value.trim() };
+    if (!doc.version || !doc.date || !doc.by || !doc.notes) { toast('Fill in the version, date, who and what changed.'); return; }
+    if (versions().some(v => v.version === doc.version)) { toast(`Version ${doc.version} already exists. Use a new number.`); return; }
+    if (await write(() => db.collection('versions').add(doc), `Version ${doc.version} recorded`)) $('#vf-notes').value = '';
+  };
+
+  /* ---------- headshots ---------- */
+  async function squareJpeg(file) {
+    const img = await createImageBitmap(file);
+    const side = Math.min(img.width, img.height), out = 320, c = document.createElement('canvas');
+    c.width = c.height = out;
+    c.getContext('2d').drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, out, out);
+    return await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('encode')), 'image/jpeg', 0.86));
+  }
+  async function uploadPhoto(pid, file) {
+    const p = M.PBY[pid]; if (!p || !file) return;
+    if (!assetsCap) { toast('Only people who can edit this page can upload photos.'); return; }
+    let blob; try { blob = await squareJpeg(file); } catch (e) { toast('That image could not be read. Use a JPEG or PNG.'); return; }
+    toast('Uploading photo…');
+    let res;
+    try { res = await assetsCap.upload(blob, { type: 'image/jpeg' }); }
+    catch (e) {
+      const c = e && e.code;
+      toast(c === 'too_large' ? 'That image is too large.' : c === 'quota_or_state' ? 'Photo storage is full.' : c === 'rate_limited' ? 'Too many uploads. Wait a moment and try again.' : 'The photo did not upload. Try again.');
+      return;
+    }
+    const old = p.photo;
+    if (await write(() => db.doc('people/' + pid).update({ photo: res.id }), 'Photo saved for ' + p.name) && old && old !== res.id) assetsCap.delete(old).catch(() => {});
+  }
+  async function removePhoto(pid) {
+    const p = M.PBY[pid]; if (!p || !p.photo) return;
+    const old = p.photo;
+    if (await write(() => db.doc('people/' + pid).update({ photo: '' }), 'Photo removed') && assetsCap) assetsCap.delete(old).catch(() => {});
+  }
+
+  /* ---------- team and leave ---------- */
+  const STATDOT = { planned: 'var(--muted)', 'in-progress': 'var(--accent)', done: 'var(--ok)', blocked: 'var(--bad)' };
+  function personCard(p) {
+    const id = p ? p.id : '';
+    const mine = o => p ? o === id : !M.PBY[o];
+    const ini = INITS.filter(i => mine(M.initOwner[i.id]));
+    const all = M.acts.filter(a => mine(a.owner)), open = all.filter(a => a.status !== 'done').sort((x, y) => x.s - y.s);
+    const late = open.filter(a => a.e < TODAY), tds = M.todos.filter(t => !t.done && mine(t.owner)).sort((a, b) => (D(a.due) || 9e15) - (D(b.due) || 9e15));
+    const lv = p ? M.leave.filter(l => l.person === id && l.e >= TODAY) : [];
+    const away = p && onLeaveNow(id);
+    const big = p ? `<div class="big" style="--pc:${pcol(p)}">${esc(initials(p.name))}${face(p)}</div>` : `<div class="big none">?</div>`;
+    const actLi = a => `<li><i class="dot" style="background:${STATDOT[a.status] || 'var(--muted)'}" title="${esc(STAT[a.status] || a.status)}"></i><span class="t"><button type="button" class="linkbtn" data-goto="${esc(a.id)}">${esc(a.id)}</button> ${esc(a.t)}</span><span class="d ${a.e < TODAY && a.status !== 'done' ? 'over' : ''}">${when(a)}</span></li>`;
+    return `<article class="pcard ${p ? '' : 'unassigned'}">
+      <div class="phead">${big}<div><h3>${p ? esc(p.name) : 'Not yet assigned'}</h3>${p ? `<div class="role">${esc(p.role || 'No role given')}</div>` : '<div class="role">Work with no owner</div>'}
+        <div class="counts"><span><b>${ini.length}</b> initiatives</span><span><b>${open.length}</b> open actions</span>${late.length ? `<span style="color:var(--bad)"><b style="color:var(--bad)">${late.length}</b> overdue</span>` : ''}<span><b>${tds.length}</b> to-dos</span>${away ? '<span class="tag-now">Away now</span>' : ''}</div></div></div>
+      ${ini.length ? `<div class="sect"><h4>Initiatives owned</h4><div class="chips">${ini.map(i => `<span class="who"><i class="dot" style="background:${i.col}"></i>${esc(i.tag)}</span>`).join('')}</div></div>` : ''}
+      <div class="sect"><h4>Actions${all.length > open.length ? ` · ${all.length - open.length} done` : ''}</h4>${open.length ? `<ul>${open.map(actLi).join('')}</ul>` : '<p class="muted" style="font-size:13px">No open actions.</p>'}</div>
+      ${tds.length ? `<div class="sect"><h4>To-dos</h4><ul>${tds.map(t => `<li><i class="tick" style="width:9px;height:9px;border:1.5px solid var(--muted);border-radius:2px;display:inline-block"></i><span class="t">${esc(t.text)}</span><span class="d ${D(t.due) < TODAY ? 'over' : ''}">${isNaN(D(t.due)) ? '' : fmt(D(t.due))}</span></li>`).join('')}</ul></div>` : ''}
+      ${lv.length ? `<div class="sect"><h4>Leave</h4><ul>${lv.map(l => `<li><i class="dot" style="background:var(--leave)"></i><span class="t">${esc(l.note || 'Leave')}</span><span class="d">${fmtR(l.s, l.e)}</span></li>`).join('')}</ul></div>` : ''}
+      ${p && ed() ? `<div class="tools">${assetsCap ? `<label class="btn ghost" for="ph-${esc(id)}">${p.photo ? 'Change photo' : 'Upload photo'}<input type="file" id="ph-${esc(id)}" accept="image/png,image/jpeg,image/webp" data-photo="${esc(id)}"></label>${p.photo ? `<button type="button" class="btn ghost" data-unphoto="${esc(id)}">Remove photo</button>` : ''}` : '<span class="note">Only people who can edit this page can upload photos.</span>'}</div>` : ''}
+    </article>`;
+  }
+  function renderTeam() {
+    if (!(inlineEdit && inlineEdit.section === 'team' && $('#v-team .inl'))) {
+      const cards = $('#pcards');
+      if (!cards.contains(document.activeElement) || !document.activeElement.matches('input[type=file]')) {
+        cards.innerHTML = M.people.map(personCard).join('') + personCard(null);
+        $$('[data-goto]', cards).forEach(b => b.onclick = () => { window.showView('roadmap'); showDetail(b.dataset.goto, $('#detail')); });
+        $$('[data-photo]', cards).forEach(i => i.onchange = () => { const f = i.files && i.files[0]; if (f) uploadPhoto(i.dataset.photo, f); });
+        $$('[data-unphoto]', cards).forEach(b => b.onclick = () => removePhoto(b.dataset.unphoto));
+      }
+    }
+
+    if (inlineEdit && inlineEdit.section === 'team' && $('#v-team .inl')) return;
+    $('#peopleList').innerHTML = !db ? '<p class="muted">The team list is stored live. Open the plan app to see it.</p>'
+      : M.people.length ? M.people.map(p => inlineEdit && inlineEdit.kind === 'person' && inlineEdit.id === p.id
+        ? `<form class="inl" data-pform="${esc(p.id)}"><label>Name<input type="text" name="name" required maxlength="80" value="${esc(p.name)}"></label><label>Role<input type="text" name="role" maxlength="80" value="${esc(p.role || '')}"></label><div class="bar"><button class="btn" type="submit">Save</button><button class="btn ghost" type="button" data-cancel>Cancel</button></div></form>`
+        : `<div class="person">${chip(p.id, false)}<div><b>${esc(p.name)}</b><small>${esc(p.role || 'No role given')}</small></div>${ed() ? `<span class="rowbtns"><button type="button" class="pen" data-pe="${esc(p.id)}">Edit</button><button type="button" class="x" data-px="${esc(p.id)}" aria-label="Remove ${esc(p.name)}">×</button></span>` : '<span></span>'}</div>`).join('')
+      : `<p class="muted">No one on the team list yet.${ed() ? ' Add people below, then assign owners from any action.' : canWrite ? ' Switch on edit mode to add people.' : ''}</p>`;
+    $$('[data-pe]').forEach(b => b.onclick = () => { inlineEdit = { section: 'team', kind: 'person', id: b.dataset.pe }; renderTeamLists(); });
+    $$('[data-pform]').forEach(f => {
+      f.querySelector('[data-cancel]').onclick = () => { inlineEdit = null; renderTeamLists(); };
+      f.onsubmit = async e => { e.preventDefault(); const fd = new FormData(f), name = String(fd.get('name')).trim(); if (!name) return;
+        if (await write(() => db.doc('people/' + f.dataset.pform).set({ name, role: String(fd.get('role')).trim() }), 'Saved ' + name)) { inlineEdit = null; renderTeamLists(); } };
+    });
+    $$('[data-px]').forEach(b => b.onclick = async () => {
+      if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Remove?'; b.style.fontSize = '12px'; return; }
+      const pid = b.dataset.px, owned = M.acts.filter(a => a.owner === pid).length;
+      if (await write(() => db.doc('people/' + pid).delete(), owned ? `Removed. ${owned} action${owned === 1 ? '' : 's'} now need a new owner.` : 'Removed from the team'));
+    });
+    const lp = $('#lf-person').value; $('#lf-person').innerHTML = M.people.map(p => `<option value="${esc(p.id)}" ${p.id === lp ? 'selected' : ''}>${esc(p.name)}</option>`).join('') || '<option value="">Add people first</option>';
+    const lv = M.leave.filter(l => M.PBY[l.person]);
+    $('#leaveList').innerHTML = !db ? '<p class="muted">Leave is stored live.</p>' : lv.length ? lv.map(l => inlineEdit && inlineEdit.kind === 'leave' && inlineEdit.id === l.id
+      ? `<form class="inl" data-lform="${esc(l.id)}"><label>Person<select name="person">${M.people.map(p => `<option value="${esc(p.id)}" ${p.id === l.person ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></label><label>From<input type="date" name="start" required value="${iso(l.s)}"></label><label>To<input type="date" name="end" required value="${iso(l.e)}"></label><label class="wide">Note<input type="text" name="note" maxlength="80" value="${esc(l.note || '')}"></label><div class="bar"><button class="btn" type="submit">Save</button><button class="btn ghost" type="button" data-cancel>Cancel</button></div></form>`
+      : `<div class="leaveitem ${l.e < TODAY ? 'past' : ''}"><span>${chip(l.person)} <span class="mono">${fmtR(l.s, l.e)}</span>${l.note ? ' · ' + esc(l.note) : ''}${l.s <= TODAY && l.e >= TODAY ? '<span class="tag-now">Away now</span>' : ''}</span>${ed() ? `<span class="rowbtns"><button type="button" class="pen" data-le="${esc(l.id)}">Edit</button><button type="button" class="x" data-lx="${esc(l.id)}" aria-label="Delete leave">×</button></span>` : ''}</div>`).join('') : '<p class="muted">No leave recorded.</p>';
+    $$('[data-lx]').forEach(b => b.onclick = () => write(() => db.doc('leave/' + b.dataset.lx).delete(), 'Leave removed'));
+    $$('[data-le]').forEach(b => b.onclick = () => { inlineEdit = { section: 'team', kind: 'leave', id: b.dataset.le }; renderTeamLists(); });
+    $$('[data-lform]').forEach(f => {
+      f.querySelector('[data-cancel]').onclick = () => { inlineEdit = null; renderTeamLists(); };
+      f.onsubmit = async e => { e.preventDefault(); const fd = new FormData(f), s = fd.get('start'), en = fd.get('end') || s;
+        if (D(en) < D(s)) { toast('The end date is before the start date.'); return; }
+        if (await write(() => db.doc('leave/' + f.dataset.lform).set({ person: fd.get('person'), start: s, end: en, note: String(fd.get('note')).trim() }), 'Leave updated')) { inlineEdit = null; renderTeamLists(); } };
+    });
+  }
+  const renderTeamLists = () => renderTeam();
+  $('#personForm').onsubmit = async e => {
+    e.preventDefault();
+    const name = $('#pf-name').value.trim(); if (!name) return;
+    if (await write(() => db.collection('people').add({ name, role: $('#pf-role').value.trim() }), name + ' added')) { $('#pf-name').value = ''; $('#pf-role').value = ''; }
+  };
+  $('#leaveForm').onsubmit = async e => {
+    e.preventDefault();
+    const person = $('#lf-person').value, start = $('#lf-start').value, end = $('#lf-end').value || start;
+    if (!person) { toast('Add the person to the team first.'); return; }
+    if (D(end) < D(start)) { toast('The end date is before the start date.'); return; }
+    if (await write(() => db.collection('leave').add({ person, start, end, note: $('#lf-note').value.trim() }), 'Leave added')) { $('#lf-start').value = ''; $('#lf-end').value = ''; $('#lf-note').value = ''; }
+  };
+
+  /* ---------- milestones ---------- */
+  const MSTATE = { done: 'Done', late: 'Overdue', risk: 'At risk', ok: 'On track' };
+  const msPill = m => `<span class="mst ${m.mstate}" title="${esc(m.mwhy.length ? 'Because ' + m.mwhy.join('; ') : MSTATE[m.mstate])}">${MSTATE[m.mstate]}</span>`;
+  const milestonesOf = id => M.acts.filter(a => a.init === id && a.demo).sort((p, q) => p.s - q.s || p.e - q.e);
+  // The next milestone is the earliest one not yet done, so an overdue milestone stays "next" until it is done.
+  const nextMilestone = id => milestonesOf(id).find(m => m.status !== 'done') || null;
+  const inDays = m => { const d = Math.round((m.s - TODAY) / DAY); return d === 0 ? 'today' : d > 0 ? `in ${d} day${d === 1 ? '' : 's'}` : `${-d} day${d === -1 ? '' : 's'} ago`; };
+
+  /* ---------- initiative links ---------- */
+  // Accept only web addresses; add https:// when no scheme is given. Returns '' for anything else (e.g. javascript:).
+  function safeUrl(u) {
+    let s = String(u || '').trim(); if (!s) return '';
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(s)) s = 'https://' + s;
+    try { const x = new URL(s); return (x.protocol === 'https:' || x.protocol === 'http:') && x.hostname ? x.href : ''; } catch (e) { return ''; }
+  }
+  const hostOf = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
+  // The Links block on an initiative. In read-only mode it is hidden when there are no links.
+  function linksHtml(i, section) {
+    const links = M.links[i.id] || [];
+    const editing = inlineEdit && inlineEdit.kind === 'link' && inlineEdit.init === i.id && inlineEdit.section === section;
+    if (!links.length && !ed()) return '';
+    const form = l => `<form class="inl lnkform" data-lform="${esc(l ? l.id : 'new')}">
+        <label>Name<input type="text" name="name" maxlength="80" value="${esc(l ? l.name : '')}" placeholder="e.g. V1 showcase recording"></label>
+        <label class="wide">Web address<input type="text" name="url" required maxlength="800" value="${esc(l ? l.url : '')}" placeholder="https://…"></label>
+        <div class="bar"><button class="btn" type="submit">${l ? 'Save link' : 'Add link'}</button><button class="btn ghost" type="button" data-cancel>Cancel</button></div></form>`;
+    const items = links.map(l => editing && inlineEdit.lid === l.id ? `<li class="lnkedit">${form(l)}</li>`
+      : `<li><a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" title="${esc(l.url)}">${esc(l.name)}</a><span class="lhost">${esc(hostOf(l.url))}</span>${ed() ? `<button type="button" class="pen" data-ledit="${esc(l.id)}" aria-label="Edit link ${esc(l.name)}">Edit</button><button type="button" class="x" data-ldel="${esc(l.id)}" aria-label="Delete link ${esc(l.name)}">×</button>` : ''}</li>`).join('');
+    const add = editing && inlineEdit.lid === 'new' ? form(null) : ed() ? '<button type="button" class="chip" data-ladd>+ Add link</button>' : '';
+    return `<div class="lnkbox" data-linit="${i.id}"><span class="eyebrow">Links</span>${links.length ? `<ul class="lnks">${items}</ul>` : '<span class="muted" style="font-size:13px">No links yet.</span>'}${add}</div>`;
+  }
+  // Wire the Links blocks inside scope. rerender redraws the page section after the form opens or closes.
+  function bindLinks(scope, section, rerender) {
+    $$('.lnkbox', scope).forEach(box => {
+      const init = box.dataset.linit, list = () => (M.links[init] || []).map(l => ({ id: l.id, name: l.name, url: l.url }));
+      const save = (next, msg) => write(() => db.doc('meta/links-' + init).set({ links: next }), msg);
+      const open = lid => { inlineEdit = { section, kind: 'link', init, lid }; rerender(); $(`.lnkbox[data-linit="${init}"] .inl input`, scope)?.focus(); };
+      $$('[data-ladd]', box).forEach(b => b.onclick = () => open('new'));
+      $$('[data-ledit]', box).forEach(b => b.onclick = () => open(b.dataset.ledit));
+      $$('[data-ldel]', box).forEach(b => b.onclick = async () => {
+        if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Delete?'; b.style.fontSize = '12px'; return; }
+        const l = list().find(x => x.id === b.dataset.ldel);
+        await save(list().filter(x => x.id !== b.dataset.ldel), `Deleted link${l ? ' ' + l.name : ''}`);
+      });
+      $$('[data-lform]', box).forEach(f => {
+        f.querySelector('[data-cancel]').onclick = () => { inlineEdit = null; rerender(); };
+        f.onsubmit = async e => {
+          e.preventDefault();
+          const fd = new FormData(f), url = safeUrl(fd.get('url'));
+          if (!url) { toast('Enter a web address starting with https:// or http://.'); return; }
+          const name = String(fd.get('name') || '').trim() || hostOf(url);
+          const cur = list(), lid = f.dataset.lform;
+          const next = lid === 'new' ? cur.concat([{ id: Math.random().toString(36).slice(2, 10), name, url }]) : cur.map(x => x.id === lid ? { ...x, name, url } : x);
+          if (await save(next, lid === 'new' ? `Added link ${name}` : `Saved link ${name}`)) { inlineEdit = null; rerender(); }
+        };
+      });
+    });
+  }
+
+  // An initiative's milestone track: next milestone, its status and why, then every milestone in date order.
+  function msBoxHtml(i) {
+    const ms = milestonesOf(i.id), nx = nextMilestone(i.id);
+    if (!ms.length) return `<div class="msbox"><div class="mshead"><span class="eyebrow">Milestones</span><span class="muted">None yet.${ed() ? ' Tick "Milestone" when editing an action to add one.' : ''}</span></div></div>`;
+    const done = ms.filter(m => m.status === 'done').length;
+    const head = nx
+      ? `<span class="eyebrow">Next milestone</span><b>${esc(nx.t)}</b><span class="mono">${when(nx)} · ${inDays(nx)}</span>${msPill(nx)}${chip(nx.owner)}`
+      : `<span class="eyebrow">Milestones</span><span>All ${ms.length} done.</span>`;
+    return `<div class="msbox"><div class="mshead">${head}<span class="muted" style="margin-left:auto">${done}/${ms.length} done</span></div>
+      ${nx && nx.mwhy.length ? `<div class="mswhy ${nx.mstate}">${nx.mstate === 'late' ? 'Overdue: ' : 'At risk because '}${esc(nx.mwhy.join('; '))}.</div>` : ''}
+      <ol class="mstrack">${ms.map(m => `<li class="${m.mstate} ${m === nx ? 'next' : ''}"><i class="md"></i><button type="button" data-ms="${esc(m.id)}" title="${esc(m.id + ' · ' + MSTATE[m.mstate] + (m.mwhy.length ? ': ' + m.mwhy.join('; ') : ''))}">
+        <span class="mdate">${when(m)}${m === nx ? ' <span class="nexttag">NEXT</span>' : ''}</span><span class="mtitle">${esc(m.t)}</span><span>${msPill(m)}</span></button></li>`).join('')}</ol></div>`;
+  }
+  // An initiative's actions as horizon columns of cards, earliest first, with a detail panel (id panelId) beneath.
+  function hzHtml(acts, panelId) {
+    const cols = H.filter(h => acts.some(a => a.h === h.id));
+    if (!cols.length) return '<p class="hznone">No actions yet.</p>';
+    return `<div class="hzrow">${cols.map(h => { const list = acts.filter(a => a.h === h.id).sort((p, q) => p.s - q.s);
+      return `<div class="hzcol ${h.id === 'now' ? 'now' : ''} ${h.id === 'earlier' ? 'earlier' : ''}"><h4>${esc(h.label)}<span class="cnt">${list.length}</span></h4><span class="hzr">${esc(h.range)}</span><ul class="elist">${list.map(a => actCard(a, lastDetail[panelId] === a.id)).join('')}</ul></div>`; }).join('')}</div>
+      <div class="idet"><div class="detail empty" id="${panelId}">Select an action to see its detail.</div></div>`;
+  }
+
+  /* ---------- action card (Initiatives and Estate Management pages) ---------- */
+  const actCard = (a, selected) => `<li><button type="button" class="ecard ${a.status === 'done' ? 'done' : ''} ${a.overdue ? 'overdue' : ''} ${selected ? 'sel' : ''}" data-ea="${esc(a.id)}">
+      <span class="t1"><span class="eid">${esc(a.id)}</span>${a.demo ? '<i class="diamond" title="Milestone"></i>' : ''}<span class="statpill st-${esc(a.status)}">${esc(STAT[a.status] || a.status)}${a.p && a.status !== 'done' ? ` · ${a.p}%` : ''}</span>${a.overdue ? '<span class="odp">Overdue</span>' : ''}</span>
+      <span class="etx">${esc(a.t)}</span>
+      <span class="t3">${chip(a.owner)}<span>${when(a)}</span></span></button></li>`;
+  // Clicking a card selects it and opens its detail (or the editor, in edit mode) in the given panel.
+  const bindCards = (scope, panelFor) => $$('[data-ea]', scope).forEach(b => b.onclick = () => {
+    const panel = panelFor(b);
+    $$('.ecard.sel', b.closest('.hzrow, .epipe') || scope).forEach(c => c.classList.remove('sel')); b.classList.add('sel');
+    ed() && M.usingLive ? openEditor(b.dataset.ea, panel) : showDetail(b.dataset.ea, panel);
+  });
+
+  /* ---------- initiatives ---------- */
+  const initDoc = (i, over = {}) => ({ owner: M.initOwner[i.id] || '', ...Object.fromEntries(INIT_FIELDS.map(k => [k, i[k] || ''])),
+    ...(i.custom ? { custom: true, color: i.color, created: i.created } : {}), ...over });
+  // The next free letter for an added initiative (then two letters, AA, AB, ...).
+  const nextInitId = () => {
+    const used = new Set([...INITS.map(i => i.id), ...S.initiatives.map(i => i.id), ...M.acts.map(a => a.init)]);
+    const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for (const c of L) if (!used.has(c)) return c;
+    for (const a of L) for (const b of L) if (!used.has(a + b)) return a + b;
+    return null;
+  };
+  // One form for adding (i = null) or editing an initiative. Colour is chosen only for initiatives added here.
+  const initForm = (i, id) => {
+    const isNew = !i, custom = isNew || i.custom, v = k => esc(i ? i[k] || '' : '');
+    const free = COLOURS.find(c => !INITS.some(x => x.color === c[0])) || COLOURS[COLOURS.length - 1];
+    const colour = i ? i.color : free[0];
+    return `<article class="init" style="--ic:var(${colour})"><form class="inl" data-iform="${isNew ? '__new' : i.id}" style="padding:18px 20px">
+        <span class="eyebrow wide">${isNew ? `New initiative ${esc(id)}` : `Edit initiative ${esc(i.id)}`}</span>
+        <label class="wide">Name<input type="text" name="name" required maxlength="120" value="${v('name')}"></label>
+        <label>Short label (filters)<input type="text" name="tag" required maxlength="40" value="${v('tag')}" placeholder="e.g. LGR Workbench"></label>
+        <label>Owner<select name="owner">${ownerOptions(i ? M.initOwner[i.id] : '')}</select></label>
+        ${custom ? `<label>Colour<select name="color">${COLOURS.map(c => `<option value="${c[0]}" ${c[0] === colour ? 'selected' : ''}>${c[1]}</option>`).join('')}</select></label>` : ''}
+        <label class="wide">Summary<textarea name="short" maxlength="300">${v('short')}</textarea></label>
+        <label class="wide">Outcome<textarea name="outcome" maxlength="600">${v('outcome')}</textarea></label>
+        <label class="wide">First demo<input type="text" name="firstDemo" maxlength="200" value="${v('firstDemo')}"></label>
+        <label class="wide">Done when<textarea name="exit" maxlength="400">${v('exit')}</textarea></label>
+        <div class="bar wide"><button class="btn" type="submit">${isNew ? 'Add initiative' : 'Save'}</button><button class="btn ghost" type="button" data-cancel>Cancel</button></div></form></article>`;
+  };
+  function renderInits() {
+    if (inlineEdit && inlineEdit.section === 'inits' && $('#inits .inl')) return;
+    const adding = inlineEdit && inlineEdit.kind === 'newinit';
+    $('#inits').innerHTML = (adding ? initForm(null, inlineEdit.id) : '') + INITS.map(i => {
+      const acts = M.acts.filter(a => a.init === i.id);
+      if (inlineEdit && inlineEdit.kind === 'init' && inlineEdit.id === i.id) return initForm(i);
+      const span = acts.length ? fmtR(Math.min(...acts.map(a => a.s)), Math.max(...acts.map(a => a.e))) : '';
+      return `<article class="init" style="--ic:${i.col}"><div class="ih"><div class="bar"></div><div class="ihb">
+      <span class="eyebrow">Initiative ${i.id} · ${acts.length} actions · ${acts.filter(a => a.demo).length} milestones · ${acts.filter(a => a.status === 'done').length} done · ${span}</span>
+      <h3>${esc(i.name)}</h3><p class="outcome">${esc(i.outcome)}</p>
+      ${ed() ? `<div class="chips"><button type="button" class="btn ghost" data-ie="${i.id}">Edit initiative</button><button type="button" class="btn ghost" data-imove="${i.id}" data-dir="-1" ${INITS[0] === i ? 'disabled' : ''} aria-label="Move ${esc(i.name)} up">↑ Move up</button><button type="button" class="btn ghost" data-imove="${i.id}" data-dir="1" ${INITS[INITS.length - 1] === i ? 'disabled' : ''} aria-label="Move ${esc(i.name)} down">↓ Move down</button>${i.custom ? (acts.length ? `<span class="note" style="align-self:center">Delete is available once it has no actions.</span>` : `<button type="button" class="btn danger" data-idel="${i.id}">Delete initiative</button>`) : ''}</div>` : ''}
+      <dl class="kv"><div><dt>Owner</dt><dd>${ed() ? `<select data-iown="${i.id}" aria-label="Owner of ${esc(i.name)}">${ownerOptions(M.initOwner[i.id])}</select>` : chip(M.initOwner[i.id])}</dd></div><div><dt>First demo</dt><dd>${esc(i.firstDemo)}</dd></div><div><dt>Done when</dt><dd>${esc(i.exit)}</dd></div></dl>
+      ${linksHtml(i, 'inits')}
+      </div></div>
+      ${msBoxHtml(i)}
+      <details class="acts" ${openInits.has(i.id) ? 'open' : ''} data-init="${i.id}"><summary>Actions by horizon</summary>${hzHtml(acts, 'idet-' + i.id)}</details>
+    </article>`; }).join('');
+    $$('[data-iown]').forEach(s => s.onchange = () => write(() => db.doc('inits/' + s.dataset.iown).set(initDoc(IBY[s.dataset.iown], { owner: s.value })), 'Owner updated'));
+    $$('[data-ie]').forEach(b => b.onclick = () => { inlineEdit = { section: 'inits', kind: 'init', id: b.dataset.ie }; renderInits(); $('#inits .inl input')?.focus(); });
+    $$('[data-imove]').forEach(b => b.onclick = async () => {
+      const ids = INITS.map(i => i.id), k = ids.indexOf(b.dataset.imove), j = k + Number(b.dataset.dir);
+      if (k < 0 || j < 0 || j >= ids.length) return;
+      [ids[k], ids[j]] = [ids[j], ids[k]];
+      if (await write(() => db.doc('meta/initOrder').set({ order: ids }), `Moved ${IBY[b.dataset.imove].tag} ${Number(b.dataset.dir) < 0 ? 'up' : 'down'}`)) {
+        setTimeout(() => $(`[data-imove="${CSS.escape(b.dataset.imove)}"][data-dir="${b.dataset.dir}"]`)?.focus(), 150);
+      }
+    });
+    $$('[data-iform]').forEach(f => {
+      f.querySelector('[data-cancel]').onclick = () => { inlineEdit = null; renderInits(); };
+      f.onsubmit = async e => {
+        e.preventDefault(); const fd = new FormData(f), isNew = f.dataset.iform === '__new';
+        const vals = Object.fromEntries([...INIT_FIELDS, 'owner'].map(k => [k, String(fd.get(k) || '').trim()]));
+        if (!vals.name || !vals.tag) { toast('Give the initiative a name and a short label.'); return; }
+        const color = COLOURS.some(c => c[0] === fd.get('color')) ? fd.get('color') : null;
+        if (isNew) {
+          const id = nextInitId(); if (!id) { toast('No initiative IDs are left.'); return; }
+          const doc = { ...vals, custom: true, color: color || '--p7', created: new Date().toISOString() };
+          if (await write(() => db.doc('inits/' + id).set(doc), `Added initiative ${id}: ${vals.tag}`)) { inlineEdit = null; openInits.add(id); renderInits(); }
+          return;
+        }
+        const i = IBY[f.dataset.iform];
+        const doc = initDoc(i, { ...vals, ...(i.custom && color ? { color } : {}) });
+        if (await write(() => db.doc('inits/' + i.id).set(doc), 'Initiative saved')) { inlineEdit = null; renderInits(); }
+      };
+    });
+    $$('[data-idel]').forEach(b => b.onclick = async () => {
+      const id = b.dataset.idel, i = IBY[id];
+      if (!i || !i.custom || M.acts.some(a => a.init === id)) return;
+      if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = `Click again to delete ${i.tag}`; return; }
+      if (await write(() => db.doc('inits/' + id).delete(), `Deleted initiative ${i.tag}`)) {
+        const od = (live.meta || []).find(d => d.id === 'initOrder');
+        if (od && Array.isArray(od.order) && od.order.includes(id)) write(() => db.doc('meta/initOrder').set({ order: od.order.filter(x => x !== id) }));
+      }
+    });
+    $$('details.acts').forEach(d => d.ontoggle = () => { d.open ? openInits.add(d.dataset.init) : openInits.delete(d.dataset.init); });
+    bindCards($('#inits'), b => $('#idet-' + CSS.escape(b.closest('details.acts').dataset.init)));
+    bindLinks($('#inits'), 'inits', renderInits);
+    // Clicking a milestone opens the initiative's actions and shows that milestone's detail there.
+    $$('#inits [data-ms]').forEach(b => b.onclick = () => {
+      const a = M.BY[b.dataset.ms]; if (!a) return;
+      const det = $(`details.acts[data-init="${CSS.escape(a.init)}"]`); if (!det) return;
+      det.open = true; openInits.add(a.init);
+      const panel = $('#idet-' + CSS.escape(a.init));
+      if (panel) { ed() && M.usingLive ? openEditor(a.id, panel) : showDetail(a.id, panel); }
+    });
+  }
+  const openInits = new Set();
+  $('#addInit').onclick = () => {
+    if (inlineEdit && inlineEdit.kind === 'newinit') return;
+    inlineEdit = { section: 'inits', kind: 'newinit', id: nextInitId() };
+    renderInits(); $('#inits').scrollIntoView({ block: 'start', behavior: reduced ? 'auto' : 'smooth' }); $('#inits .inl input')?.focus();
+  };
+  $('#expandAll').onclick = e => { const open = e.currentTarget.getAttribute('aria-pressed') !== 'true'; e.currentTarget.setAttribute('aria-pressed', String(open)); e.currentTarget.textContent = open ? 'Close all actions' : 'Open all actions'; $$('details.acts').forEach(d => d.open = open); };
+
+  /* ---------- synthetic workers page ---------- */
+  function renderWorkers() {
+    if (inlineEdit && inlineEdit.section === 'workers' && $('#workers .inl')) return;   // don't redraw under an open form
+    const i = IBY.S, el = $('#workers');
+    if (!i) { el.innerHTML = ''; return; }
+    const acts = M.acts.filter(a => a.init === 'S');
+    const span = acts.length ? fmtR(Math.min(...acts.map(a => a.s)), Math.max(...acts.map(a => a.e))) : '';
+    el.innerHTML = `<article class="init winit" style="--ic:${i.col}"><div class="ih"><div class="bar"></div><div class="ihb">
+      <span class="eyebrow">The Synthetic Workers initiative · ${acts.length} actions · ${acts.filter(a => a.demo).length} milestones · ${acts.filter(a => a.status === 'done').length} done${span ? ' · ' + span : ''}</span>
+      <h3>${esc(i.name)}</h3>
+      <p class="outcome">${esc(i.short)}</p>
+      <dl class="kv"><div><dt>Outcome</dt><dd>${esc(i.outcome)}</dd></div><div><dt>Owner</dt><dd>${chip(M.initOwner[i.id])}</dd></div><div><dt>First demo</dt><dd>${esc(i.firstDemo)}</dd></div><div><dt>Done when</dt><dd>${esc(i.exit)}</dd></div></dl>
+      ${linksHtml(i, 'workers')}
+      ${ed() ? '<div><button type="button" class="btn ghost" id="wEditInit">Edit the initiative (on the Initiatives page)</button></div>' : ''}
+      </div></div>
+      ${msBoxHtml(i)}
+      <div class="acthead">Actions by horizon</div>
+      ${hzHtml(acts, 'wdet')}
+    </article>`;
+    bindCards(el, () => $('#wdet'));
+    bindLinks(el, 'workers', renderWorkers);
+    $$('[data-ms]', el).forEach(b => b.onclick = () => { const a = M.BY[b.dataset.ms]; if (a) (ed() && M.usingLive ? openEditor(a.id, $('#wdet')) : showDetail(a.id, $('#wdet'))); });
+    const eb = $('#wEditInit');
+    if (eb) eb.onclick = () => { window.showView('inits'); inlineEdit = { section: 'inits', kind: 'init', id: 'S' }; renderInits(); $('#inits .inl')?.scrollIntoView({ block: 'start' }); $('#inits .inl input')?.focus(); };
+  }
+
+  /* ---------- estate ---------- */
+  let fate = null;
+  function renderEstate() {
+    const card = a => actCard(a, lastDetail.edetail === a.id);
+    const estateActs = M.acts.filter(a => a.init === 'A').sort((p, q) => p.s - q.s);
+    const part = (n, name, text, acts, extra = '') => {
+      const done = acts.filter(a => a.status === 'done').length, pct = acts.length ? Math.round(done / acts.length * 100) : 0;
+      return `<section class="epart ${extra}"><div class="ephead"><div class="top">${n ? `<span class="enum">${n}</span>` : ''}<h3>${esc(name)}</h3><span class="cnt">${done}/${acts.length} done</span></div>${text ? `<p>${esc(text)}</p>` : ''}<div class="ebar" title="${pct}% done"><i style="width:${pct}%"></i></div></div>
+        <ul class="elist">${acts.map(card).join('') || '<li class="eempty">No actions yet.</li>'}</ul></section>`;
+    };
+    // Estate Management actions not placed in one of the three parts (for example ones added in edit mode) are listed after them.
+    const other = estateActs.filter(a => !S.estate.some(st => st.id === a.stream));
+    $('#estateSteps').innerHTML = S.estate.map((st, n) => part(n + 1, st.name, st.text, estateActs.filter(a => a.stream === st.id))).join('')
+      + (other.length ? part(0, 'Other Estate Management actions', '', other, 'eother') : '');
+    bindCards($('#estateSteps'), () => $('#edetail'));
+    const fs = [...new Set(S.register.map(r => r.fate))];
+    $('#ffilter').innerHTML = [`<button type="button" class="chip" data-f="" aria-pressed="${!fate}">All actions</button>`].concat(fs.map(f => `<button type="button" class="chip" data-f="${esc(f)}" aria-pressed="${fate === f}">${esc(f)}</button>`)).join('');
+    $$('#ffilter button').forEach(b => b.onclick = () => { fate = b.dataset.f || null; renderEstate(); });
+    $('#reg').innerHTML = `<tr><th>App</th><th>Type</th><th>Owning service</th><th>Journey step</th><th>Action</th><th>Harness status</th><th>AI used</th></tr>` +
+      S.register.filter(r => !fate || r.fate === fate).map(r => `<tr><td><b>${esc(r.app)}</b><br><span class="ex">Example</span></td><td><span class="typ">${esc(r.type)}</span></td><td>${esc(r.dept)}</td><td>${esc(r.step)}</td><td><span class="fate f-${esc(r.fate)}">${esc(r.fate)}</span></td><td>${esc(r.status)}</td><td>${esc(r.ai)}</td></tr>`).join('');
+  }
+  $('#fieldlist').innerHTML = S.fields.map(f => `<li>${esc(f)}</li>`).join('');
+  const FATECOL = { Wrap: 'var(--c-p)', Renovate: 'var(--c-a)', Replace: 'var(--c-s)', Consolidate: 'var(--c-g)', Retire: 'var(--muted)', Retain: 'var(--ok)' };
+  $('#vocab').innerHTML = S.fates.map(f => { const n = S.register.filter(r => r.fate === f[0]).length;
+    return `<div style="--fc:${FATECOL[f[0]] || 'var(--line)'}"><span class="vh"><span class="fate f-${esc(f[0])}">${esc(f[0])}</span>${n ? `<span class="vn">${n} example app${n === 1 ? '' : 's'}</span>` : ''}</span><p>${esc(f[1])}</p></div>`; }).join('');
+
+  /* ---------- SMART and questions (static) ---------- */
+  $('#steps').innerHTML = S.stages.map((s, n) => `<div><span class="n">Stage ${n + 1}</span><b>${esc(s[0])}</b><p>${esc(s[1])}</p></div>`).join('');
+  // Target month per product and stage. Kept in the shared data (meta/smartTargets) as
+  // { "<product name>": ["YYYY-MM" or "", one per stage] } and set in edit mode. None are set to begin with.
+  const MONTHS = (() => { const out = [], d = new Date(W0); for (let i = 0; i < 30; i++) out.push(iso(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + i, 1)).slice(0, 7)); return out; })();
+  const monthLabel = ym => /^\d{4}-\d{2}$/.test(ym || '') ? fmt(D(ym + '-01'), { month: 'short', year: 'numeric' }) : '';
+  function renderSmart() {
+    const doc = (live.meta || []).find(d => d.id === 'smartTargets') || {};
+    const get = (p, j) => (Array.isArray(doc[p.name]) && typeof doc[p.name][j] === 'string') ? doc[p.name][j] : '';
+    const anySet = S.products.some(p => S.stages.some((s, j) => get(p, j)));
+    if ($('#matrix').contains(document.activeElement) && document.activeElement.tagName === 'SELECT') return;   // don't redraw under an open picker
+    $('#matrix').innerHTML = `<tr><th>Product</th>${S.stages.map(s => `<th>${esc(s[0])}</th>`).join('')}<th>First Harness demo</th></tr>` +
+      S.products.map((p, i) => `<tr><td class="prod" style="min-width:240px"><b>${esc(p.name)}</b><small>${esc(p.role)}</small></td>${S.stages.map((s, j) => {
+        const v = get(p, j);
+        if (ed()) return `<td><select data-sp="${i}" data-ss="${j}" aria-label="${esc(p.name)}: target month for ${esc(s[0])}" style="width:auto;font-size:12.5px;padding:4px 6px"><option value="">Not set</option>${MONTHS.concat(v && !MONTHS.includes(v) ? [v] : []).map(m => `<option value="${m}" ${m === v ? 'selected' : ''}>${esc(monthLabel(m))}</option>`).join('')}</select></td>`;
+        return `<td>${v ? `<span class="stage s2">${esc(monthLabel(v))}</span>` : '<span class="stage s3">Not set</span>'}</td>`;
+      }).join('')}<td style="min-width:180px">${esc(p.first)}</td></tr>`).join('');
+    $$('#matrix select[data-sp]').forEach(sel => sel.onchange = () => {
+      const next = {}; S.products.forEach(p => { next[p.name] = S.stages.map((s, j) => get(p, j)); });
+      next[S.products[+sel.dataset.sp].name][+sel.dataset.ss] = sel.value;
+      write(() => db.doc('meta/smartTargets').set(next), 'Target month saved');
+    });
+    $('#smartNote').textContent = (anySet ? '' : 'No target months are set yet. ')
+      + 'Earlier drafts of this page showed target dates for every cell. Those were illustrative placeholders added when the page was first drafted (20 Oct 2026); they came from no plan, estimate or document, and were removed on 20 Oct 2026.';
+  }
+  $('#qs').innerHTML = S.questions.map(q => `<li><b>${esc(q[0])}</b><p>${esc(q[1])}</p></li>`).join('');
+
+  /* ---------- render all ---------- */
+  function renderAll() {
+    build(); renderSync(); renderVersion(); renderGrid(); renderGanttTools(); renderGantt(); renderChecks(); renderTodos(); renderTeam(); renderInits(); renderWorkers(); renderEstate(); renderSmart();
+    for (const [elId, aid] of Object.entries(lastDetail)) { const el = document.getElementById(elId); if (el && !(editing && editing.el === el)) showDetail(aid, el); }
+  }
+  document.addEventListener('viewchange', e => { view = e.detail; if (view === 'gantt' && M) renderGantt(); });
+  view = ($('nav.tabs [aria-current="page"]') || {}).dataset?.view || 'roadmap';
+  renderAll();
+
+  /* ---------- live data ---------- */
+  (async () => {
+    if (!window.claude || typeof window.claude.use !== 'function') return;
+    try { db = await window.claude.use('db'); } catch (e) { db = null; }
+    if (!db) { renderAll(); return; }
+    let user = null; try { user = await window.claude.use('user'); } catch (e) {}
+    userCap = user;
+    const c = user ? await user.can('data.write') : null;
+    canWrite = c !== false;
+    try { myId = user ? await user.id() : null; } catch (e) {}
+    try { assetsCap = await window.claude.use('assets'); } catch (e) { assetsCap = null; }
+    const pending = () => drag ? (pendingRender = true) : renderAll(); let t;   // never redraw under a bar being dragged
+    const schedule = () => { clearTimeout(t); t = setTimeout(pending, 60); };
+    for (const name of Object.keys(live)) {
+      db.collection(name).onSnapshot(snap => { live[name] = snap.docs.map(d => ({ id: d.id, ...d.data() })); schedule(); },
+        () => { if (live[name] === null) { live[name] = []; schedule(); } });
+    }
+  })();
+})();
+</script>

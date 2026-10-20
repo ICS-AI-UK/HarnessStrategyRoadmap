@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "netlify": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@netlify/mcp@1.17.0"
+      ],
+      "env": {}
+    }
+  }
+}

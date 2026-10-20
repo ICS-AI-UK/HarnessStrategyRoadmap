@@ -1,0 +1,14 @@
+# Netlify deployment for the Harness plan app.
+# Every request is handled by one function (netlify/functions/app.mjs) behind the password; the plan is stored in
+# Netlify Blobs. Set APP_PASSWORD in Site configuration > Environment variables before the first deploy.
+
+[build]
+  command = "node scripts/build-netlify.mjs"
+  publish = "netlify/static"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  node_bundler = "esbuild"
