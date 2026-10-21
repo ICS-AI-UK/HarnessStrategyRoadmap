@@ -6,7 +6,11 @@
 // BLOBS_REGION where the data is held (default "eu-central-1", Frankfurt; Netlify offers no UK region)
 export async function netlifyKV(env = process.env) {
   const { getStore } = await import('@netlify/blobs');
-  const store = getStore({ name: env.BLOBS_STORE || 'harness-plan', consistency: 'strong', region: env.BLOBS_REGION || 'eu-central-1' });
+  // The store handle carries the access token of the request it was made in, and that token expires. A function
+  // instance stays warm across many requests, so a handle made once fails later with "Token expired". Each call
+  // therefore makes a fresh handle (cheap: no network), which picks up the current request's token.
+  const opts = { name: env.BLOBS_STORE || 'harness-plan', consistency: 'strong', region: env.BLOBS_REGION || 'eu-central-1' };
+  const store = new Proxy({}, { get: (_, k) => { const s = getStore(opts); const v = s[k]; return typeof v === 'function' ? v.bind(s) : v; } });
   const cond = c => c.ifMatch ? { onlyIfMatch: c.ifMatch } : c.ifNew ? { onlyIfNew: true } : {};
   // Some Blobs endpoints (Netlify's local test server among them) do not return the ETag on a read, only on a
   // listing. Then the ETag is taken from a listing FIRST and the value read after it: if the value changes in

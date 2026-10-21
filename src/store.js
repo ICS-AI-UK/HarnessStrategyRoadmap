@@ -43,7 +43,7 @@ export function openStore(kv) {
       if (ok) return next;
       await sleep(20 + Math.random() * 80 * (attempt + 1));
     }
-    throw Object.assign(new Error('The plan was busy; try again.'), { status: 503, code: 'unavailable' });
+    throw Object.assign(new Error('The plan was busy; try again.'), { status: 503, code: 'unavailable', expose: true });
   }
   const docKey = (c, id) => `doc/${c}/${id}`;
   const bump = cols => mutate('sys/revs', {}, revs => { for (const c of cols) revs[c] = token(); return revs; });

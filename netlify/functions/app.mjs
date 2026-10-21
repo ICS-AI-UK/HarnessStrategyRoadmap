@@ -6,17 +6,12 @@ import { netlifyKV } from '../../src/kv/netlify.js';
 import { PAGE_HTML, ADAPTER_JS } from '../../src/assets.gen.js';
 
 let ready = null;   // kept between requests while this function instance stays warm
-const INSTANCE = Math.random().toString(36).slice(2, 8);
 
 export default async (req, context) => {
   try {
     ready ||= (async () => createApp({ kv: await netlifyKV(), assets: { page: async () => PAGE_HTML, adapter: async () => ADAPTER_JS } }))();
     const app = await ready;
-    const res = await app.handle(req, { ip: (context && context.ip) || 'unknown' });
-    // One line per request (no query strings, cookies or bodies): which instance answered, with which signing key.
-    const u = new URL(req.url), cookie = req.headers.get('cookie') || '';
-    console.log(`req ${req.method} ${u.pathname} -> ${res.status} inst=${INSTANCE} key=${app.keyFingerprint} cookie=${/harness_session=\d/.test(cookie) ? 'yes' : 'no'}`);
-    return res;
+    return await app.handle(req, { ip: (context && context.ip) || 'unknown' });
   } catch (e) {
     ready = null;   // try setting up again on the next request (e.g. after APP_PASSWORD is added)
     console.error(e);

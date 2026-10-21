@@ -243,13 +243,14 @@ export async function createApp({ kv, assets, env = process.env, log = console.l
 
   return {
     store,
-    keyFingerprint: gate ? gate.fingerprint : '',
     async handle(req, { ip = 'unknown' } = {}) {
       try { return await route(req, ip); }
       catch (err) {
-        if (err instanceof HttpError || err.status) return respond(err.status, { code: err.code || 'unavailable', message: err.message });
+        // Only statuses this app sets on purpose reach the browser. Other errors (a storage failure can carry its own
+        // 401) become 503: a 401 here would send a signed-in person to the sign-in page and round again.
+        if (err instanceof HttpError || err.expose) return respond(err.status, { code: err.code || 'unavailable', message: err.message });
         log(err && err.stack || err);
-        return respond(500, { code: 'unavailable', message: 'Something went wrong on the server.' });
+        return respond(503, { code: 'unavailable', message: 'The plan could not be reached just now. Try again in a moment.' });
       }
     },
   };

@@ -50,8 +50,6 @@ export async function createGate({ password, kv, days = 14, secret = '' }) {
   const attrs = (secure, age) => `Path=/; HttpOnly; SameSite=Lax; Max-Age=${age}${secure ? '; Secure' : ''}`;
 
   return {
-    // A short fingerprint of the signing key, for logs: instances that disagree on it would reject each other's cookies.
-    fingerprint: crypto.createHash('sha256').update(key).digest('hex').slice(0, 8),
     // True when the request carries a valid, unexpired session cookie.
     ok(headers) {
       const v = parseCookies(headers)[COOKIE]; if (!v) return false;
