@@ -19,7 +19,7 @@ const file = args.find(a => !a.startsWith('--') && !['--site', '--region', '--st
 const SITE = opt('site', 'b811730f-990f-4963-b713-517a07fef773');
 const REGION = opt('region', 'eu-central-1');
 const STORE = opt('store', 'harness-plan');
-const COLLECTIONS = ['actions', 'inits', 'people', 'leave', 'todos', 'versions', 'meta'];
+const COLLECTIONS = ['actions', 'inits', 'people', 'leave', 'todos', 'versions', 'meta', 'comments'];
 const DOC_ID = /^[A-Za-z0-9_\-.~:@+]{1,200}$/;
 if (!file) { console.error('Usage: node scripts/push-to-netlify.mjs <backup.json>'); process.exit(1); }
 
@@ -48,7 +48,7 @@ const put = async (key, data) => {
 };
 try {
   // People, leave, to-dos and photos first: they are what is missing on a freshly seeded site.
-  const ORDER = ['people', 'leave', 'todos', 'inits', 'meta', 'versions', 'actions'];
+  const ORDER = ['people', 'leave', 'todos', 'inits', 'meta', 'versions', 'actions', 'comments'];
   const writes = [], wanted = new Set();
   for (const id of Object.keys(backup.photos || {})) if (/^[0-9a-f]{32}$/.test(id)) writes.push(['asset/' + id, Buffer.from(String(backup.photos[id].data || ''), 'base64')]);
   if (backup.users && typeof backup.users === 'object') writes.push(['sys/users', JSON.stringify(backup.users)]);

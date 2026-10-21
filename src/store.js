@@ -13,7 +13,7 @@
 // (field updates, the users list, the change tokens) read and write with a condition and retry on conflict.
 import crypto from 'node:crypto';
 
-export const COLLECTIONS = ['actions', 'inits', 'people', 'leave', 'todos', 'versions', 'meta'];
+export const COLLECTIONS = ['actions', 'inits', 'people', 'leave', 'todos', 'versions', 'meta', 'comments'];
 const token = () => crypto.randomBytes(6).toString('hex');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 

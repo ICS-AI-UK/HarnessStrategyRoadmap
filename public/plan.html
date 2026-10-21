@@ -177,6 +177,26 @@ textarea { resize: vertical; min-height: 60px; }
 .detail.empty { color: var(--muted); border-top-color: var(--line); }
 .detail .sub { font-size: 13px; color: var(--muted); }
 .detail .sub b { color: var(--ink); display: block; margin-bottom: 2px; }
+/* "Depends on", "Unlocks" and "Comments" sections in the action detail. */
+.dsec { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 12px; }
+.dsec h4 { margin: 0; font: 600 11.5px var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.dsec h4 .cnt { background: var(--band); color: var(--muted); border-radius: 9px; padding: 1px 7px; font-size: 11px; letter-spacing: 0; }
+.dlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.dref { width: 100%; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: baseline; text-align: left; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-left: 4px solid var(--ic, var(--line)); border-radius: 4px; padding: 8px 10px; cursor: pointer; }
+button.dref:hover { background: var(--band); border-color: var(--ic); }
+.dref .eid { font: 700 12.5px var(--mono, monospace); color: var(--ic, var(--muted)); }
+.dref .dt { font-size: 14px; }
+.dref .dm { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: 12px; color: var(--muted); }
+.dref.done .dt { color: var(--muted); }
+.dref.gone { cursor: default; color: var(--muted); border-left-color: var(--bad); }
+.clist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.clist li { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; }
+.clist .ch { display: flex; gap: 10px; align-items: center; font-size: 12.5px; }
+.clist .cwhen { color: var(--muted); font-size: 12px; }
+.clist .ch .x { margin-left: auto; }
+.clist p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+.cform { display: grid; gap: 6px; }
+.cform .bar { display: flex; gap: 8px; }
 /* Action detail and editors open in one modal, whichever page they are opened from. */
 dialog.mdl { padding: 0; border: 0; background: transparent; width: min(760px, calc(100vw - 32px)); max-width: none; max-height: none; overflow: visible; color: var(--ink); }
 dialog.mdl::backdrop { background: rgb(0 0 0 / .45); }
@@ -194,6 +214,10 @@ dialog.mdl .detail { max-height: calc(100dvh - 48px); overflow-y: auto; padding-
 .msel > summary::after { content: "▾"; position: absolute; right: 10px; top: 8px; color: var(--muted); }
 .msel[open] > summary { border-color: var(--accent); }
 .msel .tag { display: inline-flex; gap: 4px; align-items: center; padding: 2px 4px 2px 7px; border-radius: 3px; background: var(--band); border-left: 3px solid var(--ic, var(--line)); font-size: 12.5px; }
+.msel .tag { max-width: 100%; min-width: 0; }
+.msel .tag b { flex: none; }
+.msel .tag .tt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; max-width: 46ch; color: var(--ink); }
+.msel .tag .tdone { flex: none; color: var(--ok); font-size: 11px; font-weight: 600; }
 .msel .tag button { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 14px; line-height: 1; padding: 0 3px; }
 .msel .tag button:hover { color: var(--bad); }
 .msel .none { color: var(--muted); padding-left: 3px; }
@@ -341,7 +365,14 @@ table.t tr:last-child td { border-bottom: 0; }
 .gseg { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--line); padding: 6px 6px 0; font-size: 11.5px; white-space: nowrap; overflow: hidden; color: var(--muted); }
 .gseg.cur { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
 .gbar { --soft: color-mix(in srgb, var(--ic) 22%, var(--surface)); position: absolute; top: 9px; height: 18px; border-radius: 3px; border: 1.5px solid var(--ic); background: linear-gradient(to right, var(--ic) var(--p), var(--soft) var(--p)); cursor: pointer; padding: 0; z-index: 3; }
-.gbar.done { background: var(--ic); }
+/* Finished work: a faded, striped bar with a tick, and a muted row label with a green tick. */
+.gbar.done { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ic) 45%, var(--surface)) 0 4px, color-mix(in srgb, var(--ic) 25%, var(--surface)) 4px 8px); border-color: color-mix(in srgb, var(--ic) 55%, var(--surface)); }
+.gbar.done::after { content: "✓"; position: absolute; left: 4px; top: -1px; font: 700 11px/18px var(--body); color: var(--ok); }
+.gms.done { opacity: .5; }
+.grow.done .glabel .txt { color: var(--muted); }
+.grow.done .glabel .id { color: var(--ok); position: relative; }
+.grow.done .glabel .id::before { content: "✓"; position: absolute; right: 100%; margin-right: 3px; font-weight: 700; }   /* sits in the label's left padding, so the ID keeps its width */
+.grow.done .gown { color: var(--ok); }
 .gbar.blocked { border: 2px dashed var(--bad); }
 .gbar.clash, .gms.clash { box-shadow: 0 0 0 2px var(--bad); }
 .gms { position: absolute; top: 11px; width: 14px; height: 14px; margin-left: -7px; transform: rotate(45deg); background: var(--ic); border: 2px solid var(--surface); cursor: pointer; padding: 0; z-index: 3; }
@@ -531,7 +562,7 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 0 40px; }
 <header class="mast">
   <div class="wrap">
     <div class="top"><span class="eyebrow">ICS.ai · Strategy and plan · Draft for internal review</span><span class="sync" id="sync"><i></i><span>Loading plan…</span></span></div>
-    <div class="verline" id="verline"><button type="button" class="verbtn" id="verBtn" aria-expanded="false" aria-controls="history"><b>Version 0.12</b><span>Last updated 20 Oct 2026 by Lee Englestone</span></button><a class="verbtn" id="exportBtn" href="/api/export" download hidden title="One self-contained HTML file of the whole plan, with no editing. Opens on its own.">Download read-only copy</a><span class="lastedit" id="lastEdit"></span><form method="post" action="/logout" id="signOutForm" hidden style="margin-left:auto"><button type="submit" class="verbtn" title="Sign out of the plan on this browser">Sign out<span id="signedInAs"></span></button></form></div>
+    <div class="verline" id="verline"><button type="button" class="verbtn" id="verBtn" aria-expanded="false" aria-controls="history"><b>Version 0.13</b><span>Last updated 21 Oct 2026 by Lee Englestone</span></button><a class="verbtn" id="exportBtn" href="/api/export" download hidden title="One self-contained HTML file of the whole plan, with no editing. Opens on its own.">Download read-only copy</a><span class="lastedit" id="lastEdit"></span><form method="post" action="/logout" id="signOutForm" hidden style="margin-left:auto"><button type="submit" class="verbtn" title="Sign out of the plan on this browser">Sign out<span id="signedInAs"></span></button></form></div>
     <h1>The Harness Gen 3 ASE <span>Strategy and plan: from aspiration to implementation, from prototype to production</span></h1>
     <p class="lede">The Harness is the platform we deploy into a council's own cloud to host, connect and grow the apps and synthetic workers that run their services. This plan sets out six initiatives, who owns each piece of work, and a working demonstration every fortnight from this week onwards.</p>
     <div class="thesis">
@@ -891,6 +922,7 @@ window.SEED = {
     { version: '0.10', date: '2026-10-20', by: 'Lee Englestone', notes: 'Deployed to Netlify, deploying automatically from GitHub. Save and delete buttons show a spinner while the change saves and ignore repeat clicks. "Depends on" is now a searchable dropdown of actions grouped by initiative. Next milestone removed from the roadmap row headings.' },
     { version: '0.11', date: '2026-10-20', by: 'Lee Englestone', notes: 'Clicking an action, milestone or leave entry on any page now opens its detail or editor in a pop-up over the page, instead of a panel at the bottom. Close it with ×, Escape or a click outside (a click outside does nothing while a form is open).' },
     { version: '0.12', date: '2026-10-20', by: 'Lee Englestone', notes: 'Gantt: new Days zoom with each day labelled and weekends shaded; Earlier and Later move a week at a time in it. Month and horizon names stay in view while scrolling along the chart.' },
+    { version: '0.13', date: '2026-10-21', by: 'Lee Englestone', notes: 'Comments on every action: everyone can read them, and in edit mode people can add and delete them. "Depends on" and "Unlocks" in the action detail are now clickable rows showing each action’s name, dates and status; the editor shows the names of the actions it depends on as well as their IDs. Finished work on the Gantt is shown faded and striped with a tick.' },
   ],
   questions: [
     ['Synthetic workers: the brief was cut off at "agents that will…"', 'I have assumed they are agents defined like staff roles: a remit, permitted tools, a named human confirmer, and measures. Please complete the sentence so the definition matches yours.'],
@@ -928,7 +960,7 @@ window.SEED = {
   };
 
   /* ---------- state ---------- */
-  const live = { actions: null, inits: null, people: null, leave: null, todos: null, versions: null, meta: null };
+  const live = { actions: null, inits: null, people: null, leave: null, todos: null, versions: null, meta: null, comments: null };
   let db = null, canWrite = false, view = 'roadmap';
   let editMode = false, drag = null, suppressClick = false, pendingRender = false;
   let inlineEdit = null;   // { section, kind, id } while an inline form is open
@@ -1038,7 +1070,11 @@ window.SEED = {
     (live.meta || []).filter(d => /^links-[A-Z]{1,3}$/.test(d.id)).forEach(d => {
       links[d.id.slice(6)] = (Array.isArray(d.links) ? d.links : []).filter(l => l && typeof l.name === 'string' && safeUrl(l.url));
     });
-    M = { usingLive, people, PBY, leave, initOwner, acts, BY, issues, todos, links };
+    // Comments: one doc each in "comments" { action, text, by, name, at }, listed oldest first under their action.
+    const comments = {};
+    (live.comments || []).filter(c => c && typeof c.text === 'string' && typeof c.action === 'string')
+      .sort((a, b) => String(a.at || '').localeCompare(String(b.at || ''))).forEach(c => (comments[c.action] = comments[c.action] || []).push(c));
+    M = { usingLive, people, PBY, leave, initOwner, acts, BY, issues, todos, links, comments };
   }
 
   /* ---------- people helpers ---------- */
@@ -1094,7 +1130,7 @@ window.SEED = {
     finally { done(); }
   }
   // Every saved change stamps meta/lastEdit with the time and the editor's id (never their name), one write at a time.
-  let myId = null, userCap = null, assetsCap = null, editChain = Promise.resolve();
+  let myId = null, myName = '', userCap = null, assetsCap = null, editChain = Promise.resolve();
   function noteEdit() {
     if (!db) return;
     const body = { at: new Date().toISOString(), by: myId || '' };
@@ -1157,21 +1193,61 @@ window.SEED = {
   function showDetail(id, el) {
     const a = M.BY[id]; if (!a) { el.className = 'detail empty'; el.textContent = 'That action is no longer in the plan.'; return; }
     lastDetail[el.id] = id; if (editing && editing.el === el) editing = null;
-    const deps = a.deps.map(d => M.BY[d] ? `<b>${esc(d)}</b> ${esc(M.BY[d].t)} <span class="mono">(${when(M.BY[d])})</span>` : `<b>${esc(d)}</b> (not in the plan)`);
-    const next = M.acts.filter(x => x.deps.includes(a.id)).map(d => `<b>${esc(d.id)}</b> ${esc(d.t)}`);
+    const deps = a.deps.map(depRow);
+    const next = M.acts.filter(x => x.deps.includes(a.id)).sort((p, q) => p.s - q.s).map(x => depRow(x.id));
     const tds = M.todos.filter(t => t.action === a.id);
     el.className = 'detail'; el.style.setProperty('--ic', a.initObj.col);
     el.innerHTML = `<span class="eyebrow">${esc(a.initObj.name)} · ${esc(HL[a.h])}${a.demo ? ' · Milestone' : ''}</span>
       <h3>${esc(a.t)}</h3><p class="why">${esc(a.why)}</p>
       <div class="meta">${chip(a.owner)}<span class="mono">${esc(a.id)}</span><span>${when(a)}${a.ms ? '' : ` · ${Math.round((a.e - a.s) / DAY) + 1} days`}</span><span class="statpill st-${esc(a.status)}">${esc(STAT[a.status] || a.status)}${a.p && a.status !== 'done' ? ` · ${a.p}%` : ''}</span>${a.overdue ? `<span class="odp">Overdue by ${Math.round((TODAY - a.e) / DAY)} days</span>` : ''}</div>
       ${a.away.length ? `<div class="sub" style="color:var(--leave)"><b style="color:var(--leave)">Owner on leave while this runs</b>${a.away.map(l => fmtR(l.s, l.e) + (l.note ? ' (' + esc(l.note) + ')' : '')).join(', ')}</div>` : ''}
-      ${deps.length ? `<div class="sub"><b>Depends on</b>${deps.join('<br>')}</div>` : ''}
-      ${next.length ? `<div class="sub"><b>Unlocks</b>${next.join('<br>')}</div>` : ''}
+      ${deps.length ? `<div class="dsec"><h4>Depends on <span class="cnt">${deps.length}</span></h4><ul class="dlist">${deps.join('')}</ul></div>` : ''}
+      ${next.length ? `<div class="dsec"><h4>Unlocks <span class="cnt">${next.length}</span></h4><ul class="dlist">${next.join('')}</ul></div>` : ''}
       ${tds.length ? `<div class="sub"><b>To-dos</b>${tds.map(t => `${t.done ? '☑' : '☐'} ${esc(t.text)}`).join('<br>')}</div>` : ''}
       ${a.clash ? `<div class="err">Starts before something it depends on has finished.</div>` : ''}
+      ${commentsHtml(a)}
       ${ed() && M.usingLive ? `<div><button class="btn ghost" type="button" data-edit="${esc(a.id)}">Edit this action</button></div>` : canWrite && db && M.usingLive ? `<p class="note">Switch on edit mode (top right of the tab bar) to change this action.</p>` : ''}`;
     const eb = el.querySelector('[data-edit]'); if (eb) eb.onclick = () => openEditor(a.id, el);
+    $$('[data-open]', el).forEach(b => b.onclick = () => showDetail(b.dataset.open, el));
+    bindComments(el, a);
     openModal();
+  }
+  // One linked action in a "Depends on" or "Unlocks" list: its ID in the initiative colour, name, dates and status.
+  function depRow(id) {
+    const x = M.BY[id];
+    if (!x) return `<li><div class="dref gone"><span class="eid">${esc(id)}</span><span class="dt">No longer in the plan</span></div></li>`;
+    return `<li><button type="button" class="dref ${x.status === 'done' ? 'done' : ''}" data-open="${esc(x.id)}" style="--ic:${x.initObj.col}" title="Open ${esc(x.id)}">
+      <span class="eid">${esc(x.id)}</span><span class="dt">${esc(x.t)}</span>
+      <span class="dm"><span class="mono">${when(x)}</span><span class="statpill st-${esc(x.status)}">${esc(STAT[x.status] || x.status)}</span>${x.overdue ? '<span class="odp">Overdue</span>' : ''}</span></button></li>`;
+  }
+
+  /* ---------- comments ---------- */
+  // Anyone can read an action's comments; in edit mode people can add them and delete them.
+  const canComment = () => ed() && M.usingLive && !!db && canWrite;
+  const stampOf = at => { const d = new Date(at); return isNaN(d) ? '' : d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }); };
+  function commentListHtml(a) {
+    const list = M.comments[a.id] || [];
+    if (!list.length) return `<p class="note">${canComment() ? 'No comments yet.' : 'No comments yet. Switch on edit mode to add one.'}</p>`;
+    return `<ol class="clist">${list.map(c => `<li><div class="ch">${chipFor(c)}<span class="cwhen">${esc(stampOf(c.at))}</span>${canComment() ? `<button type="button" class="x" data-cdel="${esc(c.id)}" aria-label="Delete comment">×</button>` : ''}</div><p>${esc(c.text)}</p></li>`).join('')}</ol>`;
+  }
+  // The writer's name as saved with the comment, matched to a team member when one has that name.
+  const chipFor = c => { const p = M.people.find(x => x.name && x.name === c.name); return p ? chip(p.id) : `<span class="who"><i class="ini none">${esc(initials(c.name || '?'))}</i><span>${esc(c.name || 'Someone')}</span></span>`; };
+  const commentsHtml = a => `<div class="dsec cmts"><h4>Comments <span class="cnt">${(M.comments[a.id] || []).length}</span></h4><div class="cbody">${commentListHtml(a)}</div>
+    ${canComment() ? `<form class="cform"><textarea name="text" required maxlength="2000" rows="2" placeholder="Add a comment" aria-label="Add a comment on ${esc(a.id)}"></textarea><div class="bar"><button class="btn" type="submit">Add comment</button></div></form>` : ''}</div>`;
+  function bindComments(el, a) {
+    const box = $('.cmts', el); if (!box) return;
+    const bindList = () => $$('[data-cdel]', box).forEach(b => b.onclick = async () => {
+      if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Delete?'; b.style.fontSize = '12px'; return; }
+      await write(() => db.doc('comments/' + b.dataset.cdel).delete(), 'Comment deleted');
+    });
+    bindList(); box.refresh = () => { $('.cbody', box).innerHTML = commentListHtml(a); $('h4 .cnt', box).textContent = (M.comments[a.id] || []).length; bindList(); };
+    const f = $('.cform', box);
+    if (f) f.onsubmit = async e => {
+      e.preventDefault(); const t = f.elements.text, text = t.value.trim(); if (!text) return;
+      if (await write(() => db.collection('comments').add({ action: a.id, text, by: myId || '', name: myName, at: new Date().toISOString() }), 'Comment added')) t.value = '';
+    };
+    // Ctrl+Enter (or Cmd+Enter) posts the comment.
+    if (f) f.elements.text.onkeydown = e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); f.requestSubmit(); } };
   }
   function openEditor(id, el) {
     const a = id ? M.BY[id] : null;
@@ -1193,7 +1269,9 @@ window.SEED = {
         <p class="err wide" id="ed-err" hidden></p>
         <div class="bar"><button class="btn" type="submit">Save</button><button class="btn ghost" type="button" id="ed-cancel">Cancel</button>${a ? `<span style="flex:1"></span><button class="btn danger" type="button" id="ed-del">Delete action</button>` : ''}</div>
       </form>
-      ${M.people.length ? '' : '<p class="note">No one is on the team list yet. Add people on the Team and leave tab to assign owners.</p>'}`;
+      ${M.people.length ? '' : '<p class="note">No one is on the team list yet. Add people on the Team and leave tab to assign owners.</p>'}
+      ${a ? commentsHtml(a) : ''}`;
+    if (a) bindComments(el, a);
     $('#ed-cancel', el).onclick = () => { editing = null; a ? showDetail(a.id, el) : closeModal(); };
     const del = $('#ed-del', el);
     if (del) del.onclick = async () => {
@@ -1234,7 +1312,7 @@ window.SEED = {
     const sum = $('summary', d), q = $('.pane input[type=text]', d);
     const draw = () => {
       const on = $$('.opts input:checked', d).map(c => c.value);
-      sum.innerHTML = on.length ? on.map(id => { const x = M.BY[id]; return `<span class="tag" style="--ic:${x ? IBY[x.init].col : 'var(--bad)'}" title="${esc(x ? x.t : 'No longer in the plan')}">${esc(id)}<button type="button" data-undep="${esc(id)}" aria-label="Remove ${esc(id)}">×</button></span>`; }).join('') : '<span class="none">None. Choose the actions this one waits for</span>';
+      sum.innerHTML = on.length ? on.map(id => { const x = M.BY[id]; return `<span class="tag" style="--ic:${x ? IBY[x.init].col : 'var(--bad)'}" title="${esc(id + ': ' + (x ? x.t : 'No longer in the plan'))}"><b>${esc(id)}</b><span class="tt">${esc(x ? x.t : 'No longer in the plan')}</span>${x && x.status === 'done' ? '<span class="tdone">Done</span>' : ''}<button type="button" data-undep="${esc(id)}" aria-label="Remove ${esc(id)}">×</button></span>`; }).join('') : '<span class="none">None. Choose the actions this one waits for</span>';
     };
     draw();
     d.addEventListener('change', e => { if (e.target.type === 'checkbox') draw(); });
@@ -1426,11 +1504,12 @@ window.SEED = {
         const right = a.ms ? x(a.s) + px / 2 + 10 : x(a.e + DAY) + (a.demo ? 10 : 5);
         const away = gs.leave ? a.away.map(l => { const s2 = Math.max(l.s, a.s), e2 = Math.min(l.e, a.e); return `<i class="gaway" style="left:${x(s2)}px;width:${Math.max(px, x(e2 + DAY) - x(s2))}px" title="${esc(own.name)} on leave ${fmtR(l.s, l.e)}"></i>`; }).join('') : '';
         const mark = a.ms
-          ? `<button type="button" class="gms ${a.demo ? 'demo' : ''} ${a.clash ? 'clash' : ''} ${od}" style="left:${x(a.s) + px / 2}px" data-a="${esc(a.id)}" title="${tip}" aria-label="${esc(a.id + ' ' + a.t)}"></button>`
+          ? `<button type="button" class="gms ${a.demo ? 'demo' : ''} ${a.status === 'done' ? 'done' : ''} ${a.clash ? 'clash' : ''} ${od}" style="left:${x(a.s) + px / 2}px" data-a="${esc(a.id)}" title="${tip}" aria-label="${esc(a.id + ' ' + a.t)}"></button>`
           : `<button type="button" class="gbar ${esc(a.status)} ${a.clash ? 'clash' : ''} ${od}" style="left:${x(a.s)}px;width:${Math.max(4, x(a.e + DAY) - x(a.s))}px;--p:${a.p}%" data-a="${esc(a.id)}" title="${tip}" aria-label="${esc(a.id + ' ' + a.t)}"></button>`
             + (a.demo ? `<i class="gsdot" style="left:${x(a.e + DAY)}px;top:11px;width:12px;height:12px;margin-left:-6px"></i>` : '');
-        const ownLabel = a.overdue ? `Overdue${own ? ' · ' + esc(own.name) : ''}` : (own ? esc(own.name) : '');
-        html += `<div class="grow act-row ${gs.sel === a.id ? 'sel' : ''} ${od}" data-row="${esc(a.id)}" style="--ic:${a.initObj.col}"><div class="glabel" title="${esc(a.t)}"><span class="id">${esc(a.id)}</span><span class="txt">${esc(a.t)}</span>${chip(a.owner, false)}</div><div class="gtrack" style="width:${W}px">${away}${mark}<span class="gown ${a.overdue ? 'over' : ''}" style="left:${right}px">${ownLabel}</span></div></div>`;
+        const isDone = a.status === 'done';
+        const ownLabel = a.overdue ? `Overdue${own ? ' · ' + esc(own.name) : ''}` : isDone ? `Done${own ? ' · ' + esc(own.name) : ''}` : (own ? esc(own.name) : '');
+        html += `<div class="grow act-row ${gs.sel === a.id ? 'sel' : ''} ${isDone ? 'done' : ''} ${od}" data-row="${esc(a.id)}" style="--ic:${a.initObj.col}"><div class="glabel" title="${esc(a.t)}"><span class="id">${esc(a.id)}</span><span class="txt">${esc(a.t)}</span>${chip(a.owner, false)}</div><div class="gtrack" style="width:${W}px">${away}${mark}<span class="gown ${a.overdue ? 'over' : ''}" style="left:${right}px">${ownLabel}</span></div></div>`;
         rows.push({ a, y: y + ROW / 2 }); y += ROW;
       });
     });
@@ -2088,7 +2167,12 @@ window.SEED = {
   function renderAll() {
     build(); renderSync(); renderVersion(); renderGrid(); renderGanttTools(); renderGantt(); renderChecks(); renderTodos(); renderTeam(); renderInits(); renderWorkers(); renderEstate(); renderSmart();
     // Refresh the open detail with the new data (a form being filled in is left alone).
-    if (dlg.open && lastDetail.mbody && !editing) showDetail(lastDetail.mbody, MB);
+    // A comment being typed is kept; while the editor is open only its comments list is refreshed.
+    if (dlg.open && lastDetail.mbody && !editing) {
+      const t = $('.cform textarea', MB), draft = t ? t.value : '', focused = t && document.activeElement === t;
+      showDetail(lastDetail.mbody, MB);
+      const t2 = $('.cform textarea', MB); if (t2 && draft) { t2.value = draft; if (focused) t2.focus(); }
+    } else if (dlg.open && editing) { const box = $('.cmts', MB); if (box && box.refresh) box.refresh(); }
   }
   document.addEventListener('viewchange', e => { view = e.detail; if (view === 'gantt' && M) renderGantt(); });
   view = ($('nav.tabs [aria-current="page"]') || {}).dataset?.view || 'roadmap';
@@ -2104,6 +2188,7 @@ window.SEED = {
     const c = user ? await user.can('data.write') : null;
     canWrite = c !== false;
     try { myId = user ? await user.id() : null; } catch (e) {}
+    try { myName = user && user.me ? (await user.me()).name || '' : ''; } catch (e) {}
     try { assetsCap = await window.claude.use('assets'); } catch (e) { assetsCap = null; }
     const pending = () => drag ? (pendingRender = true) : renderAll(); let t;   // never redraw under a bar being dragged
     const schedule = () => { clearTimeout(t); t = setTimeout(pending, 60); };
