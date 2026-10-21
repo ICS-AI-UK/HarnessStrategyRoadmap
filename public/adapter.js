@@ -15,8 +15,25 @@
 
   function fail(code, message) { var e = new Error(message); e.code = code; return e; }
   // The session has expired or been signed out elsewhere: go to the sign-in page and come back to this page after.
+  // At most once every 30 seconds: if the server keeps refusing a cookie the sign-in page accepts, going round again
+  // would reload the page every few seconds, so instead the page stays put and offers a link to sign in again.
+  // The return address keeps the view (#v-gantt) but not the query, so it never nests "?next=" inside itself.
   var leaving = false;
-  function signIn() { if (leaving) return; leaving = true; location.href = '/login?next=' + encodeURIComponent(location.pathname + location.search + location.hash); }
+  function signIn() {
+    if (leaving) return; leaving = true;
+    var to = '/login?next=' + encodeURIComponent(location.pathname + location.hash), last = 0;
+    try { last = Number(sessionStorage.getItem('harness-signin-at')) || 0; } catch (e) {}
+    if (Date.now() - last < 30000) { stuck(to); return; }
+    try { sessionStorage.setItem('harness-signin-at', String(Date.now())); } catch (e) {}
+    location.href = to;
+  }
+  function stuck(to) {
+    if (document.getElementById('harness-stuck')) return;
+    var b = document.createElement('div'); b.id = 'harness-stuck'; b.setAttribute('role', 'alert');
+    b.style.cssText = 'position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:100;background:#b3261e;color:#fff;padding:10px 16px;border-radius:6px;font:600 14px system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.3)';
+    b.innerHTML = 'The server did not accept your sign-in. Changes will not save. <a style="color:#fff" href="' + to.replace(/"/g, '&quot;') + '">Sign in again</a>';
+    (document.body || document.documentElement).appendChild(b);
+  }
   function snapshotOf(col) {
     var docs = (cache[col] || []).map(function (d) {
       var body = {}; for (var k in d) if (k !== 'id') body[k] = d[k];

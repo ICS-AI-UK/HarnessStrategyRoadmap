@@ -243,6 +243,7 @@ export async function createApp({ kv, assets, env = process.env, log = console.l
 
   return {
     store,
+    keyFingerprint: gate ? gate.fingerprint : '',
     async handle(req, { ip = 'unknown' } = {}) {
       try { return await route(req, ip); }
       catch (err) {
